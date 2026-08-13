@@ -7,6 +7,100 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ContentSection {
+  HOMEPAGE
+  ABOUT
+  CONTACT
+}
+
+enum PolicyType {
+  PRIVACY_POLICY
+  TERMS_AND_CONDITIONS
+  BOOKING_POLICY
+  APPOINTMENT_POLICY
+  CANCELLATION_POLICY
+  REFUND_POLICY
+}
+
+enum DepositType {
+  NONE
+  FIXED
+  PERCENTAGE
+  FULL
+}
+
+enum QuestionType {
+  TEXT
+  TEXTAREA
+  SELECT
+  RADIO
+  CHECKBOX
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum AppointmentEventType {
+  CREATED
+  CONFIRMED
+  CANCELLED
+  RESCHEDULED
+  COMPLETED
+  NO_SHOW
+  PAYMENT_RECEIVED
+  PAYMENT_FAILED
+  REFUND_ISSUED
+  REMINDER_SENT
+  NOTE_ADDED
+}
+
+enum PaymentStatus {
+  PENDING
+  DEPOSIT_PAID
+  PAID_IN_FULL
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL
+  REMAINDER
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  PAYMENT_CONFIRMATION
+  APPOINTMENT_REMINDER
+  CANCELLATION_CONFIRMATION
+  RESCHEDULE_CONFIRMATION
+  REFUND_CONFIRMATION
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+// Phase 1 — unchanged
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -16,4 +110,363 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([email])
+}
+
+// Single-row configuration table — always upserted, never multi-row
+model BusinessSettings {
+  id           String   @id @default(cuid())
+  businessName String
+  ownerName    String
+  email        String
+  phone        String?
+  address      String?
+  logoUrl      String?
+  websiteUrl   String?
+  instagramUrl String?
+  tiktokUrl    String?
+  facebookUrl  String?
+  currency     String   @default("GBP")
+  timezone     String   @default("Europe/London")
+  updatedAt    DateTime @updatedAt
+}
+
+// Single-row booking rules configuration — always upserted, never multi-row
+model BookingSettings {
+  id                        String   @id @default(cuid())
+  minNoticeHours            Int      @default(24)
+  maxAdvanceDays            Int      @default(90)
+  defaultBufferMins         Int      @default(0)
+  cancellationDeadlineHours Int      @default(24)
+  reschedulingDeadlineHours Int      @default(24)
+  customerCanCancel         Boolean  @default(true)
+  customerCanReschedule     Boolean  @default(true)
+  depositRequired           Boolean  @default(true)
+  // How long a PENDING appointment holds a slot waiting for payment
+  paymentHoldMins           Int      @default(15)
+  // Hours before appointment to send reminders e.g. [48, 24]
+  reminderHours             Int[]    @default([48, 24])
+  updatedAt                 DateTime @updatedAt
+}
+
+// Lightweight CMS — one row per known section, typed JSON content per section
+model SiteContent {
+  id        String         @id @default(cuid())
+  section   ContentSection @unique
+  // Validated at application layer with Zod; shapes differ per section
+  data      Json
+  updatedAt DateTime       @updatedAt
+}
+
+model Faq {
+  id           String   @id @default(cuid())
+  question     String
+  answer       String
+  displayOrder Int      @default(0)
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([published, displayOrder])
+}
+
+// Current live policy content; version incremented on each admin save
+model Policy {
+  id          String            @id @default(cuid())
+  type        PolicyType        @unique
+  title       String
+  content     String
+  version     Int               @default(1)
+  published   Boolean           @default(false)
+  updatedAt   DateTime          @updatedAt
+  acceptances PolicyAcceptance[]
+}
+
+// Immutable acceptance record — stores the full content snapshot seen at booking time
+model PolicyAcceptance {
+  id             String     @id @default(cuid())
+  appointmentId  String
+  policyType     PolicyType
+  // The Policy.version at acceptance time
+  policyVersion  Int
+  // Full content snapshot — unambiguous record of what the customer read
+  policyContent  String
+  acceptedAt     DateTime   @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  policy      Policy      @relation(fields: [policyType], references: [type], onDelete: Restrict)
+
+  @@unique([appointmentId, policyType])
+}
+
+model ServiceCategory {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  services     Service[]
+}
+
+model Service {
+  id                 String           @id @default(cuid())
+  categoryId         String?
+  name               String
+  description        String?
+  durationMins       Int
+  // Buffer added after appointment ends; applied during availability checks only
+  bufferMins         Int              @default(0)
+  pricePence         Int
+  depositType        DepositType      @default(NONE)
+  // Required when depositType = FIXED
+  depositPence       Int?
+  // Required when depositType = PERCENTAGE; integer e.g. 25 = 25%
+  depositPercentage  Int?
+  imageUrl           String?
+  preparationNotes   String?
+  active             Boolean          @default(true)
+  featured           Boolean          @default(false)
+  displayOrder       Int              @default(0)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  category     ServiceCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  questions    ServiceQuestion[]
+  appointments Appointment[]
+
+  @@index([active])
+  @@index([featured])
+}
+
+model ServiceQuestion {
+  id           String       @id @default(cuid())
+  serviceId    String
+  label        String
+  questionType QuestionType
+  required     Boolean      @default(false)
+  displayOrder Int          @default(0)
+
+  service  Service                  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  options  ServiceQuestionOption[]
+  answers  AppointmentAnswer[]
+
+  @@index([serviceId])
+}
+
+model ServiceQuestionOption {
+  id           String @id @default(cuid())
+  questionId   String
+  label        String
+  displayOrder Int    @default(0)
+
+  question ServiceQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+// Recurring weekly working hours; multiple rows per dayOfWeek for split shifts
+model AvailabilityRule {
+  id        String  @id @default(cuid())
+  // Convention: 0=Sunday 1=Monday 2=Tuesday 3=Wednesday 4=Thursday 5=Friday 6=Saturday
+  dayOfWeek Int
+  // Wall-clock time in HH:MM format; interpreted using BusinessSettings.timezone
+  startTime String
+  endTime   String
+  active    Boolean @default(true)
+
+  @@index([dayOfWeek, active])
+}
+
+// One-off blocked date/time ranges that override weekly availability
+model BlockedPeriod {
+  id        String    @id @default(cuid())
+  // UTC timestamps
+  startAt   DateTime
+  endAt     DateTime
+  // True when the entire day(s) are blocked regardless of specific times
+  allDay    Boolean   @default(false)
+  reason    String?
+  createdAt DateTime  @default(now())
+
+  @@index([startAt, endAt])
+}
+
+// A person who has booked — no account, no password
+model Customer {
+  id           String        @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String
+  phone        String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+
+  // Not @unique: same person may use slightly different emails across bookings
+  @@index([email])
+}
+
+// Secure self-service token — raw token never stored, only SHA-256 hash
+model AppointmentToken {
+  id            String    @id @default(cuid())
+  appointmentId String
+  // SHA-256 hash of the raw token (hex-encoded); used for lookup
+  tokenHash     String    @unique
+  expiresAt     DateTime?
+  revoked       Boolean   @default(false)
+  // Updated each time the customer successfully uses the link
+  lastUsedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  customerId     String
+  serviceId      String
+  status         AppointmentStatus @default(PENDING)
+  // UTC timestamps
+  startAt        DateTime
+  endAt          DateTime
+  // PENDING slot hold expiry — null means no expiry; past means hold has lapsed
+  holdExpiresAt  DateTime?
+  // Snapshots of service values at booking time — preserved if service later changes
+  durationMins   Int
+  bufferMins     Int
+  timezone       String
+  serviceName    String
+  pricePence     Int
+  depositPence   Int
+  notes          String?
+  adminNotes     String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  customer         Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  service          Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  answers          AppointmentAnswer[]
+  tokens           AppointmentToken[]
+  events           AppointmentEvent[]
+  policyAcceptances PolicyAcceptance[]
+  payments         Payment[]
+  notifications    NotificationLog[]
+
+  @@index([startAt])
+  @@index([endAt])
+  @@index([status])
+  @@index([customerId])
+  @@index([serviceId])
+  @@index([holdExpiresAt])
+}
+
+model AppointmentAnswer {
+  id            String  @id @default(cuid())
+  appointmentId String
+  // Nullable: question may be deleted after booking; label snapshot preserves readability
+  questionId    String?
+  // Snapshot of the question text at booking time
+  questionLabel String
+  answer        String
+
+  appointment Appointment      @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  question    ServiceQuestion? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  @@unique([appointmentId, questionId])
+  @@index([appointmentId])
+}
+
+// Lightweight audit trail for important appointment lifecycle events
+model AppointmentEvent {
+  id            String               @id @default(cuid())
+  appointmentId String
+  eventType     AppointmentEventType
+  description   String?
+  // Machine-readable detail e.g. old/new times for reschedule
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, createdAt])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  appointmentId         String
+  status                PaymentStatus @default(PENDING)
+  paymentType           PaymentType
+  // Amount in pence — never Float
+  amountPence           Int
+  currency              String        @default("GBP")
+  stripePaymentIntentId String?       @unique
+  stripeChargeId        String?
+  // Passed to Stripe API; prevents duplicate charges on retry
+  idempotencyKey        String        @unique
+  failureReason         String?
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict)
+  refunds     Refund[]
+
+  @@index([appointmentId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+}
+
+model Refund {
+  id             String       @id @default(cuid())
+  paymentId      String
+  // Refund amount in pence
+  amountPence    Int
+  currency       String       @default("GBP")
+  stripeRefundId String       @unique
+  status         RefundStatus @default(PENDING)
+  reason         String?
+  processedAt    DateTime?
+  createdAt      DateTime     @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId])
+}
+
+// Notification reservation and delivery log
+// The unique deduplicationKey IS the reservation — insert wins the right to send
+model NotificationLog {
+  id                  String             @id @default(cuid())
+  appointmentId       String?
+  type                NotificationType
+  recipientEmail      String
+  // Unique reservation key — format: "TYPE:appointmentId" or "TYPE:appointmentId:offsetHours"
+  deduplicationKey    String             @unique
+  status              NotificationStatus @default(PENDING)
+  // For APPOINTMENT_REMINDER only — which interval e.g. 48 or 24 hours before
+  reminderOffsetHours Int?
+  // Nullable — set only on SENT
+  sentAt              DateTime?
+  resendMessageId     String?
+  error               String?
+  createdAt           DateTime           @default(now())
+
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
+  @@index([status, createdAt])
+}
+
+// Idempotency record for Stripe webhook deliveries
+// A committed row always means processed=true — failed processing rolls back the insert
+model StripeWebhookEvent {
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
+  eventType     String
+  processed     Boolean   @default(false)
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([processed, createdAt])
 }
