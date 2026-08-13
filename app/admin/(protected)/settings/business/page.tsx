@@ -1,23 +1,29 @@
 import type { Metadata } from "next";
-import { Building2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { BusinessSettingsForm } from "@/components/admin/settings/business-settings-form";
+import { getBusinessSettings } from "@/lib/actions/booking-settings";
 
-export const metadata: Metadata = {
-  title: "Business Settings — Pherall Admin",
-};
+export const metadata: Metadata = { title: "Business Settings — Pherall Admin" };
 
-export default function BusinessSettingsPage() {
+export default async function BusinessSettingsPage() {
+  const settings = await getBusinessSettings();
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 max-w-3xl">
       <PageHeader
         title="Business"
-        description="Configure your business name, contact details, and branding."
+        description="Configure your business name, contact details, timezone, and currency."
       />
-      <EmptyState
-        icon={Building2}
-        title="Business settings coming in a future phase"
-        description="Configure your business name, stylist name, email, phone, address, logo, timezone, and currency."
+      <BusinessSettingsForm
+        initial={{
+          businessName: settings.businessName,
+          ownerName: settings.ownerName,
+          email: settings.email,
+          phone: settings.phone,
+          address: settings.address,
+          timezone: settings.timezone,
+          currency: settings.currency,
+        }}
       />
     </div>
   );

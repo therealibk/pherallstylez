@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
-import { Clock } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { AvailabilityEditor } from "@/components/admin/availability/availability-editor";
+import { getAvailabilityRules } from "@/lib/actions/availability-rules";
+import { getBusinessSettings } from "@/lib/actions/booking-settings";
 
 export const metadata: Metadata = { title: "Availability — Pherall Admin" };
 
-export default function AvailabilityPage() {
+export default async function AvailabilityPage() {
+  const [rules, businessSettings] = await Promise.all([
+    getAvailabilityRules(),
+    getBusinessSettings(),
+  ]);
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 max-w-3xl">
       <PageHeader
         title="Availability"
-        description="Configure your recurring weekly working hours."
+        description={`Configure your recurring weekly working hours (${businessSettings.timezone}).`}
       />
-      <EmptyState
-        icon={Clock}
-        title="Availability configuration coming in a future phase"
-        description="Set your weekly availability — including support for multiple periods per day and day-by-day hours — when the booking engine is implemented."
-      />
+      <AvailabilityEditor initialRules={rules} />
     </div>
   );
 }

@@ -58,13 +58,13 @@ export default async function HomePage() {
                   {hero.description}
                 </p>
               )}
-              <a
+              <Link
                 href="/book"
                 className="mt-8 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
                 style={{ background: "var(--button)", color: "var(--button-foreground)" }}
               >
                 {hero.buttonText || "Book Now"}
-              </a>
+              </Link>
             </div>
           </div>
         ) : (
@@ -77,13 +77,13 @@ export default async function HomePage() {
                 {hero.description}
               </p>
             )}
-            <a
+            <Link
               href="/book"
               className="mt-10 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
               style={{ background: "var(--button)", color: "var(--button-foreground)" }}
             >
               {hero.buttonText || "Book Now"}
-            </a>
+            </Link>
           </div>
         )}
       </section>
@@ -207,13 +207,13 @@ export default async function HomePage() {
                 {cta.description}
               </p>
             )}
-            <a
+            <Link
               href="/book"
               className="mt-10 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
               style={{ background: "var(--button-foreground)", color: "var(--button)" }}
             >
               {cta.buttonText || "Book an Appointment"}
-            </a>
+            </Link>
           </div>
         </section>
       )}

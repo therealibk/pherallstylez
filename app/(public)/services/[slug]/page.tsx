@@ -183,14 +183,14 @@ export default async function ServiceDetailPage({ params }: Props) {
         >
           <h2 className="text-xl font-semibold mb-2">Ready to book?</h2>
           <p className="text-sm opacity-80 mb-4">
-            Online booking coming soon. Contact us to book this service.
+            Choose your date and time online.
           </p>
           <Link
-            href="/contact"
+            href={`/book/${service.slug}`}
             className="inline-block rounded-lg px-6 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
             style={{ background: "var(--button)", color: "var(--button-foreground, #fff)" }}
           >
-            Contact us
+            Book now
           </Link>
         </div>
       </section>

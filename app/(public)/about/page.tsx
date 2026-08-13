@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseAboutData } from "@/lib/cms-schemas";
@@ -58,12 +59,12 @@ export default async function AboutPage() {
               <p className="mt-2 text-muted-foreground">{data.ctaDescription}</p>
             )}
             {data.ctaButtonText && (
-              <a
+              <Link
                 href="/book"
                 className="mt-6 inline-block rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background"
               >
                 {data.ctaButtonText}
-              </a>
+              </Link>
             )}
           </div>
         </section>

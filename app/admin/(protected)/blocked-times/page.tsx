@@ -1,22 +1,32 @@
 import type { Metadata } from "next";
-import { CalendarX } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { BlockedPeriodsManager } from "@/components/admin/blocked-times/blocked-periods-manager";
+import { getBlockedPeriods } from "@/lib/actions/availability-rules";
+import { getBusinessSettings } from "@/lib/actions/booking-settings";
 
 export const metadata: Metadata = { title: "Blocked Times — Pherall Admin" };
 
-export default function BlockedTimesPage() {
+export default async function BlockedTimesPage() {
+  const [periods, businessSettings] = await Promise.all([
+    getBlockedPeriods(),
+    getBusinessSettings(),
+  ]);
+
+  const serialised = periods.map((p) => ({
+    id: p.id,
+    startAt: p.startAt,
+    endAt: p.endAt,
+    allDay: p.allDay,
+    reason: p.reason,
+  }));
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 max-w-3xl">
       <PageHeader
         title="Blocked Times"
-        description="Block specific dates, times, and periods when you are unavailable."
+        description="Block specific dates and periods when you are unavailable for bookings."
       />
-      <EmptyState
-        icon={CalendarX}
-        title="Blocked times management coming in a future phase"
-        description="Block holidays, personal appointments, and any other periods you are unavailable — they will be automatically excluded from public booking."
-      />
+      <BlockedPeriodsManager initial={serialised} timezone={businessSettings.timezone} />
     </div>
   );
 }

@@ -1,24 +1,33 @@
 import type { Metadata } from "next";
-import { CalendarCog } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { BookingSettingsForm } from "@/components/admin/settings/booking-settings-form";
+import { getBookingSettings } from "@/lib/actions/booking-settings";
 
-export const metadata: Metadata = {
-  title: "Booking Settings — Pherall Admin",
-};
+export const metadata: Metadata = { title: "Booking Settings — Pherall Admin" };
 
-export default function BookingSettingsPage() {
+export default async function BookingSettingsPage() {
+  const settings = await getBookingSettings();
+
+  const initial = {
+    minNoticeHours: settings.minNoticeHours,
+    maxAdvanceDays: settings.maxAdvanceDays,
+    defaultBufferMins: settings.defaultBufferMins,
+    cancellationDeadlineHours: settings.cancellationDeadlineHours,
+    reschedulingDeadlineHours: settings.reschedulingDeadlineHours,
+    customerCanCancel: settings.customerCanCancel,
+    customerCanReschedule: settings.customerCanReschedule,
+    depositRequired: settings.depositRequired,
+    paymentHoldMins: settings.paymentHoldMins,
+    reminderHours: settings.reminderHours,
+  };
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 max-w-3xl">
       <PageHeader
         title="Booking"
         description="Configure booking rules, notice periods, and deposit requirements."
       />
-      <EmptyState
-        icon={CalendarCog}
-        title="Booking settings coming in a future phase"
-        description="Set minimum booking notice, maximum advance period, buffer time, cancellation deadlines, deposit rules, and reminder timing."
-      />
+      <BookingSettingsForm initial={initial} />
     </div>
   );
 }
