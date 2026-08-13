@@ -491,7 +491,7 @@ Availability must be checked again on the server when the customer submits the b
 
 The system must protect against race conditions where two customers attempt to book the same time simultaneously.
 
-Use appropriate database transactions and/or locking/unique constraints where necessary.
+The final booking concurrency strategy uses PostgreSQL `pg_advisory_xact_lock` inside a Prisma interactive transaction. The lock key is derived from the appointment's local date (YYYYMMDD encoded as a bigint) using the configured business timezone. This serialises concurrent booking attempts for the same day without blocking bookings on different days. The lock is transaction-scoped and is automatically released on commit or rollback — it never persists beyond the transaction.
 
 The booking system must fail safely.
 
@@ -517,6 +517,8 @@ Customer booking flow:
 12. Send confirmation email
 
 The booking should not be considered confirmed until the required payment has been successfully confirmed.
+
+PENDING appointments hold their slot using `Appointment.holdExpiresAt`. A PENDING appointment blocks availability only while the hold is active (i.e. `holdExpiresAt` is in the future or null). Once the hold expires, the slot is automatically freed without requiring a background job. The default payment hold duration is 15 minutes, configured via `BookingSettings.paymentHoldMins`.
 
 ---
 
@@ -552,6 +554,8 @@ Appointment management tokens must be:
 - Unpredictable
 - Expirable where appropriate
 - Revocable where appropriate
+
+The raw token is generated server-side using a cryptographically secure random source. Only the SHA-256 hash of the raw token is stored in the database (`AppointmentToken.tokenHash`). The raw token is sent to the customer once in an email and is never persisted. Token lookup is performed by hashing the token from the URL and querying by hash.
 
 ---
 
@@ -603,7 +607,11 @@ Never trust an amount supplied by the browser.
 
 Stripe webhook events must be verified using the Stripe webhook signing secret.
 
+Webhook signature verification must occur before any database processing.
+
 Payment processing must be idempotent.
+
+Webhook idempotency is implemented using the `StripeWebhookEvent` model. Webhook event insertion, Stripe business processing (updating Payment, Appointment, Refund, and AppointmentEvent records), and marking the event as processed all occur atomically inside a single database transaction. If processing fails, the transaction rolls back entirely — including the event insertion — so Stripe can retry the webhook safely. A committed `StripeWebhookEvent` row always means the event was successfully processed.
 
 Repeated webhook events must not create duplicate bookings or duplicate payments.
 
@@ -824,27 +832,44 @@ Allow configuring:
 
 # 32. DATABASE
 
-Initial entities:
+Implemented models (22):
 
 - User
-- StylistProfile
+- BusinessSettings
+- BookingSettings
+- SiteContent
+- Faq
+- Policy
+- PolicyAcceptance
+- ServiceCategory
 - Service
 - ServiceQuestion
 - ServiceQuestionOption
 - AvailabilityRule
-- BlockedTime
+- BlockedPeriod
 - Customer
+- AppointmentToken
 - Appointment
 - AppointmentAnswer
+- AppointmentEvent
 - Payment
 - Refund
-- Policy
-- PolicyVersion
-- ContentPage
-- FAQ
-- Notification
-- BookingSettings
-- BusinessSettings
+- NotificationLog
+- StripeWebhookEvent
+
+Implemented enums (11):
+
+- AppointmentEventType
+- AppointmentStatus
+- ContentSection
+- DepositType
+- NotificationStatus
+- NotificationType
+- PaymentStatus
+- PaymentType
+- PolicyType
+- QuestionType
+- RefundStatus
 
 Database design should be normalised appropriately.
 
