@@ -22,46 +22,72 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <h1 className="text-4xl font-semibold tracking-tight">
-          {hero.heading || "Professional Hair Styling"}
-        </h1>
-        {hero.description && (
-          <p className="mt-4 text-lg text-muted-foreground max-w-xl">
-            {hero.description}
-          </p>
+      <section className="relative">
+        {hero.imageUrl ? (
+          <div className="relative min-h-[60vh] md:min-h-[75vh] flex items-end">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hero.imageUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 text-white">
+              <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
+                {hero.heading || "Professional Hair Styling"}
+              </h1>
+              {hero.description && (
+                <p className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed">
+                  {hero.description}
+                </p>
+              )}
+              <a
+                href="/book"
+                className="mt-8 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
+                style={{ background: "var(--button)", color: "var(--button-foreground)" }}
+              >
+                {hero.buttonText || "Book Now"}
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-5xl mx-auto px-6 py-24 md:py-32">
+            <h1 className="text-5xl md:text-7xl font-semibold tracking-tight leading-tight">
+              {hero.heading || "Professional Hair Styling"}
+            </h1>
+            {hero.description && (
+              <p className="mt-6 text-xl text-muted-foreground max-w-xl leading-relaxed">
+                {hero.description}
+              </p>
+            )}
+            <a
+              href="/book"
+              className="mt-10 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
+              style={{ background: "var(--button)", color: "var(--button-foreground)" }}
+            >
+              {hero.buttonText || "Book Now"}
+            </a>
+          </div>
         )}
-        {hero.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={hero.imageUrl}
-            alt="Hero"
-            className="mt-8 w-full max-h-[480px] object-cover rounded-xl"
-          />
-        )}
-        <a
-          href="/book"
-          className="mt-8 inline-block rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background"
-        >
-          {hero.buttonText || "Book Now"}
-        </a>
       </section>
 
       {/* About teaser */}
       {aboutSection.heading && (
-        <section className="bg-muted/30">
-          <div className="max-w-5xl mx-auto px-6 py-16 grid gap-8 md:grid-cols-2 md:items-center">
+        <section className="bg-[var(--secondary)]/40">
+          <div className="max-w-5xl mx-auto px-6 py-20 grid gap-12 md:grid-cols-2 md:items-center">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">
+              <h2 className="text-3xl font-semibold tracking-tight leading-tight">
                 {aboutSection.heading}
               </h2>
               {aboutSection.description && (
-                <p className="mt-4 text-muted-foreground">{aboutSection.description}</p>
+                <p className="mt-5 text-muted-foreground leading-relaxed">{aboutSection.description}</p>
               )}
               {aboutSection.buttonText && (
                 <a
                   href="/about"
-                  className="mt-6 inline-block text-sm font-medium underline underline-offset-4"
+                  className="mt-8 inline-block text-sm font-semibold border-b-2 pb-0.5 transition-opacity hover:opacity-70"
+                  style={{ borderColor: "var(--primary)" }}
                 >
                   {aboutSection.buttonText}
                 </a>
@@ -72,7 +98,7 @@ export default async function HomePage() {
               <img
                 src={aboutSection.imageUrl}
                 alt="About"
-                className="w-full max-h-[400px] object-cover rounded-xl"
+                className="w-full aspect-[4/3] object-cover rounded-2xl shadow-sm"
               />
             )}
           </div>
@@ -81,18 +107,18 @@ export default async function HomePage() {
 
       {/* Testimonials */}
       {publishedTestimonials.length > 0 && (
-        <section className="max-w-5xl mx-auto px-6 py-16">
+        <section className="max-w-5xl mx-auto px-6 py-20">
           <h2 className="text-2xl font-semibold tracking-tight text-center">
             What clients say
           </h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {publishedTestimonials.map((t) => (
               <blockquote
                 key={t.id}
-                className="rounded-xl border p-6 space-y-3"
+                className="rounded-2xl border p-7 space-y-4"
               >
-                <p className="text-sm text-muted-foreground">"{t.quote}"</p>
-                <footer className="text-sm font-medium">
+                <p className="text-sm leading-relaxed text-muted-foreground">&ldquo;{t.quote}&rdquo;</p>
+                <footer className="text-sm font-semibold">
                   {t.name}
                   {t.role && (
                     <span className="font-normal text-muted-foreground"> · {t.role}</span>
@@ -106,17 +132,18 @@ export default async function HomePage() {
 
       {/* CTA */}
       {cta.heading && (
-        <section className="bg-foreground text-background">
-          <div className="max-w-5xl mx-auto px-6 py-16 text-center">
-            <h2 className="text-2xl font-semibold">{cta.heading}</h2>
+        <section style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
+          <div className="max-w-5xl mx-auto px-6 py-20 text-center">
+            <h2 className="text-3xl font-semibold tracking-tight">{cta.heading}</h2>
             {cta.description && (
-              <p className="mt-4 text-background/80 max-w-lg mx-auto">
+              <p className="mt-5 opacity-80 max-w-lg mx-auto leading-relaxed">
                 {cta.description}
               </p>
             )}
             <a
               href="/book"
-              className="mt-8 inline-block rounded-full bg-background text-foreground px-6 py-3 text-sm font-medium"
+              className="mt-10 inline-block rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-85"
+              style={{ background: "var(--button-foreground)", color: "var(--button)" }}
             >
               {cta.buttonText || "Book an Appointment"}
             </a>

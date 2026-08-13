@@ -1,5 +1,7 @@
 "use server";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -13,7 +15,6 @@ import {
   businessContactSchema,
   testimonialSchema,
   parseHomepageData,
-  parseAboutData,
   parseContactData,
   type HeroData,
   type HomepageAboutSectionData,

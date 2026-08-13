@@ -1,11 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   heroSchema,
-  homepageAboutSectionSchema,
-  ctaSchema,
-  aboutPageSchema,
-  contactPageSchema,
-  businessContactSchema,
   faqInputSchema,
   policyInputSchema,
   parseHomepageData,
@@ -226,7 +221,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 describe("CMS server actions — auth guard", () => {
   beforeEach(async () => {
     const { auth } = await import("@/lib/auth");
-    vi.mocked(auth).mockResolvedValue(null as any);
+    vi.mocked(auth).mockResolvedValue(// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    null as any);
   });
 
   it("saveHeroSection returns Unauthorised when not logged in", async () => {
@@ -283,6 +279,7 @@ describe("CMS server actions — auth guard", () => {
 
   it("savePolicy rejects invalid policy type", async () => {
     const { auth } = await import("@/lib/auth");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(auth).mockResolvedValue({ user: { id: "1", email: "admin@test.com" } } as any);
     const { savePolicy } = await import("@/lib/actions/policy");
     const result = await savePolicy("MADE_UP_TYPE", {

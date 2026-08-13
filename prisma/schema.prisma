@@ -114,20 +114,22 @@ model User {
 
 // Single-row configuration table — always upserted, never multi-row
 model BusinessSettings {
-  id           String   @id @default(cuid())
-  businessName String
-  ownerName    String
-  email        String
-  phone        String?
-  address      String?
-  logoUrl      String?
-  websiteUrl   String?
-  instagramUrl String?
-  tiktokUrl    String?
-  facebookUrl  String?
-  currency     String   @default("GBP")
-  timezone     String   @default("Europe/London")
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  businessName   String
+  ownerName      String
+  email          String
+  phone          String?
+  address        String?
+  logoUrl        String?
+  websiteUrl     String?
+  instagramUrl   String?
+  tiktokUrl      String?
+  facebookUrl    String?
+  currency       String   @default("GBP")
+  timezone       String   @default("Europe/London")
+  // Appearance settings: colours (7 hex vars), font key, faviconUrl
+  appearanceData Json?
+  updatedAt      DateTime @updatedAt
 }
 
 // Single-row booking rules configuration — always upserted, never multi-row

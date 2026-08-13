@@ -38,9 +38,9 @@ describe("NAV_ENTRIES", () => {
     expect(groupLabels).toContain("Settings");
   });
 
-  it("Content group has exactly 4 items", () => {
+  it("Content group has exactly 5 items", () => {
     const content = groups.find((g) => g.label === "Content");
-    expect(content?.items).toHaveLength(4);
+    expect(content?.items).toHaveLength(5);
   });
 
   it("Policies group has exactly 6 items", () => {

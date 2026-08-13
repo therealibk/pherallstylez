@@ -5,8 +5,8 @@
       "name": "Pherall Dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
-      "port": 3000,
-      "autoPort": true
+      "cwd": "/Users/therealibk/Documents/Documents - Ibukunoluwa's MacBook Pro/My Files/Pherall",
+      "port": 3000
     }
   ]
 }

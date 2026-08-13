@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import {
   saveHomepageAboutSection,
   saveCtaSection,
 } from "@/lib/actions/cms";
+import { uploadCmsImage } from "@/lib/actions/appearance";
 import type {
   HeroData,
   HomepageAboutSectionData,
@@ -41,6 +42,91 @@ function SaveRow({
   );
 }
 
+function ImageUploadField({
+  label,
+  currentUrl,
+  onUrlChange,
+  hint,
+  uploadType,
+}: {
+  label: string;
+  currentUrl: string;
+  onUrlChange: (url: string) => void;
+  hint?: string;
+  uploadType: "hero" | "about";
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError("");
+
+    const formData = new FormData();
+    formData.set("file", file);
+
+    const result = await uploadCmsImage(formData, uploadType);
+    setUploading(false);
+
+    if (result.success) {
+      onUrlChange(result.url);
+    } else {
+      setUploadError(result.error);
+    }
+
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+
+      <div className="flex items-start gap-4">
+        {currentUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={currentUrl}
+            alt=""
+            aria-hidden="true"
+            className="h-20 w-auto max-w-[140px] object-cover rounded border shrink-0"
+          />
+        ) : (
+          <div className="h-16 w-24 rounded border bg-muted/30 flex items-center justify-center text-xs text-muted-foreground shrink-0">
+            No image
+          </div>
+        )}
+
+        <div className="space-y-1.5 flex-1">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            disabled={uploading}
+            className="block text-sm file:mr-3 file:rounded file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium file:cursor-pointer cursor-pointer disabled:opacity-50"
+          />
+          {uploading && <p className="text-xs text-muted-foreground">Uploading…</p>}
+          {uploadError && <p className="text-xs text-destructive">{uploadError}</p>}
+          {currentUrl && (
+            <button
+              type="button"
+              onClick={() => onUrlChange("")}
+              className="text-xs text-muted-foreground hover:text-destructive underline underline-offset-2"
+            >
+              Remove image
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 export function HeroForm({ initial }: { initial: HeroData }) {
@@ -49,7 +135,7 @@ export function HeroForm({ initial }: { initial: HeroData }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof HeroData) {
+  function field(key: keyof Pick<HeroData, "heading" | "description" | "buttonText">) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
@@ -107,18 +193,13 @@ export function HeroForm({ initial }: { initial: HeroData }) {
               placeholder="Book Now"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="hero-image">
-              Hero Image URL
-              <span className="ml-1 text-xs text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="hero-image"
-              value={data.imageUrl}
-              onChange={field("imageUrl")}
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
+          <ImageUploadField
+            label="Hero Image (optional)"
+            currentUrl={data.imageUrl}
+            onUrlChange={(url) => setData((d) => ({ ...d, imageUrl: url }))}
+            hint="Displayed behind your headline. JPEG, PNG, or WebP. Max 2 MB."
+            uploadType="hero"
+          />
           <SaveRow isPending={isPending} saved={saved} error={error} label="Save Hero" />
         </form>
       </CardContent>
@@ -138,7 +219,7 @@ export function HomepageAboutSectionForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof HomepageAboutSectionData) {
+  function field(key: keyof Pick<HomepageAboutSectionData, "heading" | "description" | "buttonText">) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
@@ -187,18 +268,13 @@ export function HomepageAboutSectionForm({
               rows={4}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ha-image">
-              Image URL
-              <span className="ml-1 text-xs text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="ha-image"
-              value={data.imageUrl}
-              onChange={field("imageUrl")}
-              placeholder="https://example.com/photo.jpg"
-            />
-          </div>
+          <ImageUploadField
+            label="About Image (optional)"
+            currentUrl={data.imageUrl}
+            onUrlChange={(url) => setData((d) => ({ ...d, imageUrl: url }))}
+            hint="Shown alongside your about text. JPEG, PNG, or WebP. Max 2 MB."
+            uploadType="about"
+          />
           <div className="space-y-1.5">
             <Label htmlFor="ha-button">Button Text</Label>
             <Input

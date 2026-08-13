@@ -22,6 +22,7 @@ import {
   CalendarCog,
   Bell,
   UserCog,
+  Palette,
 } from "lucide-react";
 
 export type NavItem = {
@@ -95,6 +96,7 @@ export const NAV_ENTRIES: NavEntry[] = [
       { label: "About", href: "/admin/content/about", icon: Info },
       { label: "Contact", href: "/admin/content/contact", icon: Mail },
       { label: "FAQ", href: "/admin/content/faq", icon: BookOpen },
+      { label: "Appearance", href: "/admin/content/appearance", icon: Palette },
     ],
   },
   {
