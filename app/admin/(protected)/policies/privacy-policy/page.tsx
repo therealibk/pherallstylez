@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
-import { Lock } from "lucide-react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { PolicyType } from "@/lib/generated/prisma/client";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { PolicyForm } from "@/components/admin/cms/policy-form";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Pherall Admin",
-};
+export const metadata: Metadata = { title: "Privacy Policy — Pherall Admin" };
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyAdminPage() {
+  const policy = await db.policy.findUnique({
+    where: { type: PolicyType.PRIVACY_POLICY },
+  });
+  if (!policy) notFound();
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 space-y-6">
       <PageHeader
         title="Privacy Policy"
-        description="Edit and publish your privacy policy."
+        description="Edit and publish your privacy policy. Saved versions are shown to clients during booking."
       />
-      <EmptyState
-        icon={Lock}
-        title="Policy editor coming in a future phase"
-        description="Edit, version, and publish the Privacy Policy shown to clients during booking and on the public website."
-      />
+      <PolicyForm policy={policy} />
     </div>
   );
 }

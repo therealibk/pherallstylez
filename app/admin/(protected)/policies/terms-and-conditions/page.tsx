@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
-import { Scale } from "lucide-react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { PolicyType } from "@/lib/generated/prisma/client";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { PolicyForm } from "@/components/admin/cms/policy-form";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions — Pherall Admin",
 };
 
-export default function TermsAndConditionsPage() {
+export default async function TermsAndConditionsAdminPage() {
+  const policy = await db.policy.findUnique({
+    where: { type: PolicyType.TERMS_AND_CONDITIONS },
+  });
+  if (!policy) notFound();
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 space-y-6">
       <PageHeader
         title="Terms & Conditions"
         description="Edit and publish your terms and conditions."
       />
-      <EmptyState
-        icon={Scale}
-        title="Policy editor coming in a future phase"
-        description="Edit, version, and publish your Terms & Conditions shown to clients during booking and on the public website."
-      />
+      <PolicyForm policy={policy} />
     </div>
   );
 }

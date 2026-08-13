@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
-import { FileText } from "lucide-react";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { PolicyType } from "@/lib/generated/prisma/client";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { PolicyForm } from "@/components/admin/cms/policy-form";
 
-export const metadata: Metadata = {
-  title: "Booking Policy — Pherall Admin",
-};
+export const metadata: Metadata = { title: "Booking Policy — Pherall Admin" };
 
-export default function BookingPolicyPage() {
+export default async function BookingPolicyAdminPage() {
+  const policy = await db.policy.findUnique({
+    where: { type: PolicyType.BOOKING_POLICY },
+  });
+  if (!policy) notFound();
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 space-y-6">
       <PageHeader
         title="Booking Policy"
         description="Edit and publish your booking policy."
       />
-      <EmptyState
-        icon={FileText}
-        title="Policy editor coming in a future phase"
-        description="Edit, version, and publish your Booking Policy shown to clients during the booking process."
-      />
+      <PolicyForm policy={policy} />
     </div>
   );
 }
