@@ -1,15 +1,14 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { db } from "@/lib/db";
+import { loginSchema } from "@/lib/auth-schema";
 
-const loginSchema = z.object({
-  email: z.email(),
-  password: z.string().min(1),
-});
+export { loginSchema };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Required for production deployments behind a reverse proxy (Vercel, Nginx, etc.)
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/admin/login",
@@ -32,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) return null;
 
+        // Return only the fields needed for the JWT — never include password hash
         return { id: user.id, email: user.email, name: user.name ?? undefined };
       },
     }),

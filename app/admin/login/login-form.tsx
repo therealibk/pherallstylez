@@ -7,10 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/**
+ * Only accept relative paths that start with a single slash.
+ * Rejects external URLs (http://...), protocol-relative URLs (//evil.com),
+ * and anything that could redirect the admin off-site.
+ */
+function getSafeCallbackUrl(raw: string | null): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) {
+    return raw;
+  }
+  return "/admin/dashboard";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/admin/dashboard";
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,7 +41,9 @@ export function LoginForm() {
         redirect: false,
       });
 
-      if (result?.error) {
+      if (result?.status === 429) {
+        setError("Too many login attempts. Please try again later.");
+      } else if (result?.error) {
         setError("Invalid email or password.");
       } else {
         router.push(callbackUrl);
@@ -69,7 +83,7 @@ export function LoginForm() {
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
