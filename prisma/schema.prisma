@@ -203,6 +203,8 @@ model PolicyAcceptance {
 model ServiceCategory {
   id           String    @id @default(cuid())
   name         String    @unique
+  description  String?
+  active       Boolean   @default(true)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
   services     Service[]
@@ -210,6 +212,7 @@ model ServiceCategory {
 
 model Service {
   id                 String           @id @default(cuid())
+  slug               String           @unique
   categoryId         String?
   name               String
   description        String?

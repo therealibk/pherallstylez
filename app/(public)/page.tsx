@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseHomepageData } from "@/lib/cms-schemas";
+import { formatGBP, formatDuration } from "@/lib/service-schemas";
 
 export const metadata: Metadata = {
   title: "Pherall — Professional Hair Styling",
@@ -9,9 +11,23 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const record = await db.siteContent.findUnique({
-    where: { section: ContentSection.HOMEPAGE },
-  });
+  const [record, featuredServices] = await Promise.all([
+    db.siteContent.findUnique({ where: { section: ContentSection.HOMEPAGE } }),
+    db.service.findMany({
+      where: { active: true, featured: true },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+      take: 6,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        pricePence: true,
+        durationMins: true,
+        imageUrl: true,
+      },
+    }),
+  ]);
   const data = parseHomepageData(record?.data);
 
   const { hero, aboutSection, testimonials, cta } = data;
@@ -102,6 +118,57 @@ export default async function HomePage() {
               />
             )}
           </div>
+        </section>
+      )}
+
+      {/* Featured services */}
+      {featuredServices.length > 0 && (
+        <section className="max-w-6xl mx-auto px-6 py-20">
+          <div className="flex items-end justify-between mb-10 gap-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Featured services</h2>
+            <Link
+              href="/services"
+              className="text-sm font-medium border-b pb-0.5 transition-opacity hover:opacity-70"
+              style={{ borderColor: "var(--primary)" }}
+            >
+              View all
+            </Link>
+          </div>
+          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {featuredServices.map((s) => (
+              <li key={s.id}>
+                <Link
+                  href={`/services/${s.slug}`}
+                  className="group block rounded-xl border overflow-hidden hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="aspect-[4/3] bg-muted overflow-hidden">
+                    {s.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={s.imageUrl}
+                        alt={s.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-muted-foreground/30 text-4xl" aria-hidden="true">✂</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4 space-y-1.5">
+                    <h3 className="font-semibold text-base leading-tight">{s.name}</h3>
+                    {s.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{s.description}</p>
+                    )}
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-sm font-medium">{formatGBP(s.pricePence)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDuration(s.durationMins)}</span>
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
