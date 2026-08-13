@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type React from "react";
 import { db } from "@/lib/db";
 import {
@@ -7,6 +6,7 @@ import {
   COLOR_VAR_NAMES,
   DEFAULT_COLORS,
 } from "@/lib/appearance-schemas";
+import { PublicNav } from "@/components/public/nav/public-nav";
 
 async function getAppearance() {
   const settings = await db.businessSettings.findFirst({
@@ -50,53 +50,7 @@ export default async function PublicLayout({
       className="flex flex-col min-h-full"
       style={cssVars as React.CSSProperties}
     >
-      <header className="sticky top-0 z-40 border-b bg-[var(--background)]/95 backdrop-blur-sm">
-        <nav className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 font-semibold text-lg tracking-tight">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logoUrl}
-                alt={businessName}
-                className="h-8 w-auto object-contain"
-              />
-            ) : (
-              <span>{businessName}</span>
-            )}
-          </Link>
-          <ul className="hidden md:flex gap-7 text-sm font-medium">
-            <li>
-              <Link href="/services" className="hover:opacity-70 transition-opacity">
-                Services
-              </Link>
-            </li>
-            <li>
-              <Link href="/about" className="hover:opacity-70 transition-opacity">
-                About
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:opacity-70 transition-opacity">
-                Contact
-              </Link>
-            </li>
-            <li>
-              <Link href="/faq" className="hover:opacity-70 transition-opacity">
-                FAQ
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/book"
-                className="rounded-full px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-85"
-                style={{ background: "var(--button)", color: "var(--button-foreground)" }}
-              >
-                Book Now
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
+      <PublicNav businessName={businessName} logoUrl={logoUrl} />
 
       <main className="flex-1">{children}</main>
 
