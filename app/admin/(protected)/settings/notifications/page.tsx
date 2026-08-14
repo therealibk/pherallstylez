@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
-import { Bell } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
+import { getBookingSettings } from "@/lib/actions/booking-settings";
+import { NotificationSettingsForm } from "./notification-settings-form";
 
-export const metadata: Metadata = {
-  title: "Notification Settings — Pherall Admin",
-};
+export const metadata: Metadata = { title: "Notification Settings — Pherall Admin" };
 
-export default function NotificationSettingsPage() {
+export default async function NotificationSettingsPage() {
+  const settings = await getBookingSettings();
+
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-6 md:p-8 max-w-2xl">
       <PageHeader
         title="Notifications"
-        description="Configure email reminders and notification preferences."
+        description="Configure email reminders and customer permission settings."
       />
-      <EmptyState
-        icon={Bell}
-        title="Notification settings coming in a future phase"
-        description="Configure reminder timing, email templates, and notification preferences once the email phase is implemented."
+      <NotificationSettingsForm
+        reminderHours={settings.reminderHours}
+        customerCanCancel={settings.customerCanCancel}
+        customerCanReschedule={settings.customerCanReschedule}
+        cancellationDeadlineHours={settings.cancellationDeadlineHours}
+        reschedulingDeadlineHours={settings.reschedulingDeadlineHours}
       />
     </div>
   );

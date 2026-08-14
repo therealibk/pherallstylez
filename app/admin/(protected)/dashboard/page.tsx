@@ -13,14 +13,30 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { StatCard } from "@/components/admin/stat-card";
-import { EmptyState } from "@/components/admin/empty-state";
+import { AppointmentStatusBadge } from "@/components/admin/appointment-status-badge";
+import { getDashboardStats } from "@/lib/actions/appointments";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Dashboard — Pherall Admin" };
 
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(date);
+}
+
 export default async function DashboardPage() {
-  const session = await auth();
+  const [session, stats, businessSettings] = await Promise.all([
+    auth(),
+    getDashboardStats(),
+    db.businessSettings.findFirst({ select: { currency: true } }),
+  ]);
+
   const name = session?.user?.name ?? session?.user?.email ?? "Admin";
   const firstName = name.split(/\s+/)[0];
+  const currency = businessSettings?.currency ?? "GBP";
 
   return (
     <div className="px-6 py-8 md:px-8 max-w-6xl">
@@ -40,28 +56,28 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <StatCard
             label="Today"
-            value="0"
+            value={String(stats.todayCount)}
             description="Appointments today"
             icon={CalendarDays}
             accentColor="#3b82f6"
           />
           <StatCard
             label="Upcoming"
-            value="0"
+            value={String(stats.upcomingCount)}
             description="Next 7 days"
             icon={Calendar}
             accentColor="#22c55e"
           />
           <StatCard
-            label="Today's Revenue"
-            value="£0"
+            label="Revenue"
+            value={`${currency === "GBP" ? "£" : "$"}0`}
             description="Available once payments are set up"
             icon={CreditCard}
             accentColor="#8b5cf6"
           />
           <StatCard
             label="Outstanding"
-            value="£0"
+            value={`${currency === "GBP" ? "£" : "$"}0`}
             description="Unpaid balance"
             icon={AlertCircle}
             accentColor="#f59e0b"
@@ -85,12 +101,35 @@ export default async function DashboardPage() {
               <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
-          <EmptyState
-            icon={CalendarDays}
-            title="No appointments today"
-            description="Once you add availability and customers book, today's appointments will appear here."
-            action={{ label: "Manage availability", href: "/admin/availability" }}
-          />
+
+          {stats.todayAppointments.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card px-5 py-8 text-center">
+              <CalendarDays className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm font-medium">No appointments today</p>
+              <p className="text-xs text-muted-foreground mt-1">Manage your availability to accept bookings</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {stats.todayAppointments.map((appt) => (
+                <Link
+                  key={appt.id}
+                  href={`/admin/appointments/${appt.id}`}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="text-center shrink-0 w-12">
+                    <p className="text-xs font-semibold tabular-nums">{formatTime(appt.startAt)}</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {appt.customer.firstName} {appt.customer.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{appt.serviceName}</p>
+                  </div>
+                  <AppointmentStatusBadge status={appt.status} size="sm" />
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Upcoming */}
@@ -107,11 +146,36 @@ export default async function DashboardPage() {
               <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
-          <EmptyState
-            icon={Calendar}
-            title="No upcoming appointments"
-            description="Confirmed bookings for the next 7 days will appear here."
-          />
+
+          {stats.upcomingAppointments.length === 0 ? (
+            <div className="rounded-xl border border-border bg-card px-5 py-8 text-center">
+              <Calendar className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm font-medium">No upcoming appointments</p>
+              <p className="text-xs text-muted-foreground mt-1">Confirmed bookings for the next 7 days appear here</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+              {stats.upcomingAppointments.map((appt) => (
+                <Link
+                  key={appt.id}
+                  href={`/admin/appointments/${appt.id}`}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="text-center shrink-0 w-14">
+                    <p className="text-[11px] text-muted-foreground">{formatDate(appt.startAt)}</p>
+                    <p className="text-xs font-semibold tabular-nums">{formatTime(appt.startAt)}</p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {appt.customer.firstName} {appt.customer.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{appt.serviceName}</p>
+                  </div>
+                  <AppointmentStatusBadge status={appt.status} size="sm" />
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
@@ -121,7 +185,7 @@ export default async function DashboardPage() {
           Quick Actions
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <QuickAction href="/admin/appointments" icon={CalendarPlus} label="Add Appointment" description="Schedule manually" />
+          <QuickAction href="/admin/appointments" icon={CalendarPlus} label="Appointments" description="View all bookings" />
           <QuickAction href="/admin/services/new" icon={Scissors} label="Add Service" description="Create a new service" />
           <QuickAction href="/admin/blocked-times" icon={CalendarX} label="Block Time" description="Mark unavailable" />
           <QuickAction href="/admin/content/homepage" icon={Globe} label="Edit Website" description="Update content" />

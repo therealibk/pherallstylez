@@ -13,7 +13,6 @@ describe("NAV_ENTRIES", () => {
     entry.type === "item" ? [entry] : entry.items,
   );
 
-  const topLevelItems = NAV_ENTRIES.filter((e) => e.type === "item");
   const groups = NAV_ENTRIES.filter(
     (e): e is Extract<typeof e, { type: "group" }> => e.type === "group",
   );
