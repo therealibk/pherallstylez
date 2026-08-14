@@ -70,15 +70,23 @@ export default async function DashboardPage() {
           />
           <StatCard
             label="Revenue"
-            value={`${currency === "GBP" ? "£" : "$"}0`}
-            description="Available once payments are set up"
+            value={new Intl.NumberFormat("en-GB", {
+              style: "currency",
+              currency,
+              maximumFractionDigits: 0,
+            }).format(stats.monthlyRevenuePence / 100)}
+            description="Net revenue this month"
             icon={CreditCard}
             accentColor="#8b5cf6"
           />
           <StatCard
             label="Outstanding"
-            value={`${currency === "GBP" ? "£" : "$"}0`}
-            description="Unpaid balance"
+            value={new Intl.NumberFormat("en-GB", {
+              style: "currency",
+              currency,
+              maximumFractionDigits: 0,
+            }).format(stats.outstandingPence / 100)}
+            description="Balance due at appointment"
             icon={AlertCircle}
             accentColor="#f59e0b"
           />

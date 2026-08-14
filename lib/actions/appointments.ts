@@ -528,7 +528,17 @@ export async function getDashboardStats() {
   todayEnd.setHours(23, 59, 59, 999);
   const sevenDaysEnd = new Date(now.getTime() + 7 * 86_400_000);
 
-  const [todayCount, upcomingCount, todayAppointments, upcomingAppointments] = await Promise.all([
+  // Monthly revenue window: 1st of this month → now
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [
+    todayCount,
+    upcomingCount,
+    todayAppointments,
+    upcomingAppointments,
+    monthlyPayments,
+    confirmedAppointments,
+  ] = await Promise.all([
     db.appointment.count({
       where: {
         startAt: { gte: todayStart, lte: todayEnd },
@@ -569,9 +579,58 @@ export async function getDashboardStats() {
         startAt: true,
         serviceName: true,
         customer: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    // Payments received this calendar month (gross, pre-refund)
+    db.payment.findMany({
+      where: {
+        status: { in: ["PAID_IN_FULL", "DEPOSIT_PAID", "PARTIALLY_REFUNDED", "REFUNDED"] },
+        paidAt: { gte: monthStart, lte: now },
+      },
+      select: {
+        amountPence: true,
+        refunds: { select: { amountPence: true, status: true } },
+      },
+    }),
+    // Confirmed appointments that still have an outstanding balance
+    db.appointment.findMany({
+      where: { status: "CONFIRMED" },
+      select: {
+        pricePence: true,
+        depositPence: true,
+        payments: {
+          select: { status: true, amountPence: true },
+        },
       },
     }),
   ]);
 
-  return { todayCount, upcomingCount, todayAppointments, upcomingAppointments };
+  // Net monthly revenue = paid amounts minus refunds
+  const monthlyRevenuePence = monthlyPayments.reduce((sum, p) => {
+    const refunded = p.refunds
+      .filter((r) => r.status === "SUCCEEDED")
+      .reduce((s, r) => s + r.amountPence, 0);
+    return sum + p.amountPence - refunded;
+  }, 0);
+
+  // Outstanding balance = sum of deposit_paid balances on confirmed appointments
+  const outstandingPence = confirmedAppointments.reduce((sum, appt) => {
+    const depositPaid = appt.payments.some((p) => p.status === "DEPOSIT_PAID");
+    const fullPaid = appt.payments.some(
+      (p) => p.status === "PAID_IN_FULL" || p.status === "PARTIALLY_REFUNDED" || p.status === "REFUNDED",
+    );
+    if (depositPaid && !fullPaid && appt.depositPence > 0) {
+      return sum + (appt.pricePence - appt.depositPence);
+    }
+    return sum;
+  }, 0);
+
+  return {
+    todayCount,
+    upcomingCount,
+    todayAppointments,
+    upcomingAppointments,
+    monthlyRevenuePence,
+    outstandingPence,
+  };
 }

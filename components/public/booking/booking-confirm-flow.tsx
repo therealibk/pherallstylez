@@ -796,7 +796,11 @@ export function BookingConfirmFlow({ service, policies, dateStr, timeStr }: Prop
       });
 
       if (result.success) {
-        router.push(`/book/confirmation/${result.token}`);
+        if (service.depositType !== DEPOSIT_TYPE.NONE) {
+          router.push(`/book/pay/${result.token}`);
+        } else {
+          router.push(`/book/confirmation/${result.token}`);
+        }
       } else {
         setSubmitError(result.error);
       }

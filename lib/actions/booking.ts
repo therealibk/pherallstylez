@@ -162,6 +162,16 @@ export async function getConfirmationData(rawToken: string) {
               phone: true,
             },
           },
+          payments: {
+            select: {
+              id: true,
+              status: true,
+              paymentType: true,
+              amountPence: true,
+              paidAt: true,
+            },
+            orderBy: { createdAt: "desc" },
+          },
         },
       },
     },

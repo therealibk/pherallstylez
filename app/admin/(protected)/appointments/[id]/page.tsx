@@ -8,6 +8,7 @@ import { PaymentStatusBadge } from "@/components/admin/payment-status-badge";
 import { AppointmentTimeline } from "@/components/admin/appointment-timeline";
 import { AppointmentActions } from "./appointment-actions";
 import { NoteFormClient } from "./note-form-client";
+import { RefundFormClient } from "./refund-form-client";
 
 export const metadata: Metadata = { title: "Appointment — Pherall Admin" };
 
@@ -140,21 +141,48 @@ export default async function AppointmentDetailPage({ params }: Props) {
                 </h2>
               </div>
               <ul className="divide-y divide-border">
-                {appt.payments.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between px-5 py-3">
-                    <div>
-                      <p className="text-sm font-medium capitalize">{p.paymentType.toLowerCase().replace("_", " ")}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatCurrency(p.amountPence)}
-                        {p.paidAt
-                          ? ` · ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(p.paidAt)}`
-                          : ""}
-                        {p.failureReason ? ` · ${p.failureReason}` : ""}
-                      </p>
-                    </div>
-                    <PaymentStatusBadge status={p.status} size="sm" />
-                  </li>
-                ))}
+                {appt.payments.map((p) => {
+                  const alreadyRefunded = p.refunds
+                    .filter((r) => r.status !== "FAILED")
+                    .reduce((s, r) => s + r.amountPence, 0);
+                  const maxRefundable = p.amountPence - alreadyRefunded;
+                  const canRefund =
+                    ["DEPOSIT_PAID", "PAID_IN_FULL", "PARTIALLY_REFUNDED"].includes(p.status) &&
+                    maxRefundable > 0;
+
+                  return (
+                    <li key={p.id} className="px-5 py-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium capitalize">{p.paymentType.toLowerCase().replace("_", " ")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatCurrency(p.amountPence)}
+                            {p.paidAt
+                              ? ` · ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(p.paidAt)}`
+                              : ""}
+                            {p.failureReason ? ` · ${p.failureReason}` : ""}
+                          </p>
+                          {p.refunds.filter((r) => r.status !== "FAILED").length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Refunded: {formatCurrency(alreadyRefunded)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {canRefund && (
+                            <RefundFormClient
+                              paymentId={p.id}
+                              amountPence={p.amountPence}
+                              maxRefundable={maxRefundable}
+                              currency={p.currency}
+                            />
+                          )}
+                          <PaymentStatusBadge status={p.status} size="sm" />
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}

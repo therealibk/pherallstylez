@@ -60,11 +60,6 @@ export default async function PaymentsPage({ searchParams }: Props) {
         description={`${total} payment record${total !== 1 ? "s" : ""} total`}
       />
 
-      <div className="rounded-lg border border-border bg-amber-50/60 border-amber-200 px-4 py-3 text-sm text-amber-800 mb-6">
-        <p className="font-medium">Stripe integration coming soon</p>
-        <p className="text-xs mt-0.5 text-amber-700">Stripe payment processing will be available in a future update. Payment records below are created once Stripe is connected.</p>
-      </div>
-
       {payments.length === 0 ? (
         <div className="rounded-xl border border-border bg-card px-6 py-16 text-center">
           <CreditCard className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" aria-hidden="true" />
