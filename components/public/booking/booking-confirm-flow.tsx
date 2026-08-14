@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,30 +26,14 @@ import {
   DEPOSIT_TYPE,
 } from "@/lib/service-format-utils";
 
-// ── Step type ─────────────────────────────────────────────────────────────────
-
 type Step = "details" | "questions" | "policies" | "review";
-
-// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   service: BookingPageData["service"];
   policies: SerializedPolicy[];
-  dateStr: string; // YYYY-MM-DD
-  timeStr: string; // HH:MM
+  dateStr: string;
+  timeStr: string;
   timezone: string;
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatDisplayDate(dateStr: string): string {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "full" }).format(
-    new Date(dateStr + "T12:00:00Z"),
-  );
-}
-
-function formatDisplayTime(timeStr: string): string {
-  return timeStr;
 }
 
 function depositLabel(service: Props["service"]): string | null {
@@ -71,15 +54,57 @@ function depositLabel(service: Props["service"]): string | null {
   }
 }
 
-// ── Step indicator ────────────────────────────────────────────────────────────
+// ── Nav buttons ────────────────────────────────────────────────────────────────
 
-function StepIndicator({
-  steps,
-  current,
+function PrimaryButton({
+  type = "submit",
+  onClick,
+  disabled,
+  children,
 }: {
-  steps: Step[];
-  current: Step;
+  type?: "button" | "submit";
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
 }) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{ background: "var(--button,#1a1a1a)", color: "var(--button-foreground,#fff)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({
+  onClick,
+  disabled,
+  children,
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold border transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={{ borderColor: "var(--border,#e5e7eb)", color: "var(--foreground)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Step indicator ─────────────────────────────────────────────────────────────
+
+function StepIndicator({ steps, current }: { steps: Step[]; current: Step }) {
   const labels: Record<Step, string> = {
     details: "Your details",
     questions: "Questions",
@@ -89,34 +114,42 @@ function StepIndicator({
   const currentIdx = steps.indexOf(current);
 
   return (
-    <div className="flex items-center gap-2 mb-8">
+    <div className="flex items-center gap-1 mb-10" aria-label="Booking progress">
       {steps.map((step, idx) => {
         const done = idx < currentIdx;
         const active = idx === currentIdx;
         return (
-          <div key={step} className="flex items-center gap-2">
+          <div key={step} className="flex items-center gap-1 min-w-0">
             <div
               className={[
-                "flex items-center justify-center h-7 w-7 rounded-full text-xs font-semibold shrink-0",
-                done
-                  ? "bg-foreground text-background"
-                  : active
-                  ? "ring-2 ring-foreground text-foreground"
-                  : "text-muted-foreground ring-1 ring-border",
+                "flex items-center justify-center h-6 w-6 rounded-full text-[11px] font-semibold shrink-0 transition-colors",
+                done ? "text-background" : active ? "ring-2 ring-offset-1" : "ring-1",
               ].join(" ")}
+              style={
+                done
+                  ? { background: "var(--foreground)", color: "var(--background)" }
+                  : active
+                  ? {
+                      color: "var(--foreground)",
+                      boxShadow: "0 0 0 2px var(--foreground)",
+                    }
+                  : { color: "var(--muted-foreground,#888)", boxShadow: "0 0 0 1px var(--border,#e5e7eb)" }
+              }
+              aria-current={active ? "step" : undefined}
             >
               {done ? "✓" : idx + 1}
             </div>
             <span
               className={[
-                "text-sm hidden sm:inline",
+                "text-xs hidden sm:inline truncate",
                 active ? "font-semibold" : "text-muted-foreground",
               ].join(" ")}
+              style={active ? { color: "var(--foreground)" } : {}}
             >
               {labels[step]}
             </span>
             {idx < steps.length - 1 && (
-              <div className="h-px w-6 bg-border shrink-0" />
+              <div className="h-px w-5 mx-1 bg-border shrink-0" />
             )}
           </div>
         );
@@ -125,24 +158,44 @@ function StepIndicator({
   );
 }
 
-// ── Booking summary bar ───────────────────────────────────────────────────────
+// ── Row (used in review + confirmation) ───────────────────────────────────────
 
-function BookingSummaryBar({
-  service,
-  dateStr,
-  timeStr,
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-4 py-3 flex flex-wrap gap-2 justify-between text-sm">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  );
+}
+
+// ── Field wrapper ─────────────────────────────────────────────────────────────
+
+function Field({
+  id,
+  label,
+  required,
+  error,
+  children,
 }: {
-  service: Props["service"];
-  dateStr: string;
-  timeStr: string;
+  id: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border bg-muted/40 px-4 py-3 mb-6 text-sm flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
-      <span className="font-medium text-foreground">{service.name}</span>
-      <span>{formatDisplayDate(dateStr)}</span>
-      <span>{formatDisplayTime(timeStr)}</span>
-      <span>{formatDuration(service.durationMins)}</span>
-      <span className="font-medium text-foreground">{formatGBP(service.pricePence)}</span>
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>
+        {label}
+        {required ? " *" : (
+          <span className="text-muted-foreground font-normal"> (optional)</span>
+        )}
+      </Label>
+      {children}
+      {error && (
+        <p id={`err-${id}`} className="text-xs text-destructive">{error}</p>
+      )}
     </div>
   );
 }
@@ -188,47 +241,33 @@ function DetailsStep({
         setValues((v) => ({ ...v, [key]: e.target.value }));
         if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
       },
-      "aria-invalid": errors[key] ? true : undefined,
+      "aria-invalid": errors[key] ? (true as const) : undefined,
       "aria-describedby": errors[key] ? `err-${key}` : undefined,
     };
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      <h2 className="text-lg font-semibold">Your details</h2>
+      <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+        Your details
+      </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="firstName">First name *</Label>
+        <Field id="firstName" label="First name" required error={errors.firstName}>
           <Input id="firstName" autoComplete="given-name" {...field("firstName")} />
-          {errors.firstName && (
-            <p id="err-firstName" className="text-xs text-destructive">{errors.firstName}</p>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="lastName">Last name *</Label>
+        </Field>
+        <Field id="lastName" label="Last name" required error={errors.lastName}>
           <Input id="lastName" autoComplete="family-name" {...field("lastName")} />
-          {errors.lastName && (
-            <p id="err-lastName" className="text-xs text-destructive">{errors.lastName}</p>
-          )}
-        </div>
+        </Field>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="email">Email address *</Label>
+      <Field id="email" label="Email address" required error={errors.email}>
         <Input id="email" type="email" autoComplete="email" inputMode="email" {...field("email")} />
-        {errors.email && (
-          <p id="err-email" className="text-xs text-destructive">{errors.email}</p>
-        )}
-      </div>
+      </Field>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="phone">Phone number *</Label>
+      <Field id="phone" label="Phone number" required error={errors.phone}>
         <Input id="phone" type="tel" autoComplete="tel" inputMode="tel" {...field("phone")} />
-        {errors.phone && (
-          <p id="err-phone" className="text-xs text-destructive">{errors.phone}</p>
-        )}
-      </div>
+      </Field>
 
       <div className="space-y-1.5">
         <Label htmlFor="notes">
@@ -240,20 +279,18 @@ function DetailsStep({
           rows={3}
           placeholder="Anything you'd like us to know…"
           value={values.notes ?? ""}
-          onChange={(e) => {
-            setValues((v) => ({ ...v, notes: e.target.value }));
-          }}
+          onChange={(e) => setValues((v) => ({ ...v, notes: e.target.value }))}
         />
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button type="submit">Continue</Button>
+        <PrimaryButton>Continue</PrimaryButton>
       </div>
     </form>
   );
 }
 
-// ── Questions step ────────────────────────────────────────────────────────────
+// ── Questions step ─────────────────────────────────────────────────────────────
 
 function QuestionsStep({
   questions,
@@ -304,26 +341,22 @@ function QuestionsStep({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-
     for (const q of questions) {
       const val = values[q.id] ?? "";
       if (q.required) {
         if (q.questionType === "CHECKBOX") {
-          const selected = getCheckboxSelected(q.id);
-          if (selected.length === 0) {
-            newErrors[q.id] = `Please select at least one option`;
+          if (getCheckboxSelected(q.id).length === 0) {
+            newErrors[q.id] = "Please select at least one option";
           }
         } else if (!val.trim()) {
-          newErrors[q.id] = `This field is required`;
+          newErrors[q.id] = "This field is required";
         }
       }
     }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
-
     const answers: QuestionAnswerInput[] = questions
       .filter((q) => {
         const val = values[q.id] ?? "";
@@ -335,20 +368,20 @@ function QuestionsStep({
         questionLabel: q.label,
         answer: values[q.id] ?? "",
       }));
-
     onNext(answers);
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
-      <h2 className="text-lg font-semibold">Service questions</h2>
+      <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+        Service questions
+      </h2>
 
       {questions.map((q) => (
         <div key={q.id} className="space-y-2">
           <Label htmlFor={`q-${q.id}`}>
             {q.label}
-            {q.required && " *"}
-            {!q.required && (
+            {q.required ? " *" : (
               <span className="text-muted-foreground font-normal"> (optional)</span>
             )}
           </Label>
@@ -393,10 +426,7 @@ function QuestionsStep({
           {q.questionType === "RADIO" && (
             <div className="space-y-2" role="radiogroup" aria-labelledby={`q-${q.id}`}>
               {q.options.map((opt) => (
-                <label
-                  key={opt.id}
-                  className="flex items-center gap-2.5 cursor-pointer text-sm"
-                >
+                <label key={opt.id} className="flex items-center gap-2.5 cursor-pointer text-sm">
                   <input
                     type="radio"
                     name={`q-${q.id}`}
@@ -416,10 +446,7 @@ function QuestionsStep({
               {q.options.map((opt) => {
                 const selected = getCheckboxSelected(q.id);
                 return (
-                  <label
-                    key={opt.id}
-                    className="flex items-center gap-2.5 cursor-pointer text-sm"
-                  >
+                  <label key={opt.id} className="flex items-center gap-2.5 cursor-pointer text-sm">
                     <input
                       type="checkbox"
                       checked={selected.includes(opt.label)}
@@ -440,10 +467,8 @@ function QuestionsStep({
       ))}
 
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button type="submit">Continue</Button>
+        <SecondaryButton onClick={onBack}>Back</SecondaryButton>
+        <PrimaryButton>Continue</PrimaryButton>
       </div>
     </form>
   );
@@ -485,9 +510,11 @@ function PoliciesStep({
   const allAccepted = accepted.size === policies.length;
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold">Policies</h2>
+        <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+          Policies
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
           Please read and accept all policies to continue.
         </p>
@@ -498,8 +525,12 @@ function PoliciesStep({
         const isOpen = expanded === policy.type;
 
         return (
-          <div key={policy.type} className="rounded-xl border overflow-hidden">
-            <div className="px-4 py-3 flex items-start gap-3 bg-card">
+          <div
+            key={policy.type}
+            className="rounded-2xl border overflow-hidden"
+            style={{ borderColor: "var(--border,#e5e7eb)" }}
+          >
+            <div className="px-4 py-3 flex items-start gap-3">
               <input
                 id={`policy-${policy.type}`}
                 type="checkbox"
@@ -514,6 +545,7 @@ function PoliciesStep({
                 <label
                   htmlFor={`policy-${policy.type}`}
                   className="text-sm font-medium cursor-pointer"
+                  style={{ color: "var(--foreground)" }}
                 >
                   I have read and accept the {policy.title}
                 </label>
@@ -537,7 +569,10 @@ function PoliciesStep({
             </div>
 
             {isOpen && (
-              <div className="px-4 pb-4 pt-2 border-t text-sm prose prose-sm max-w-none max-h-64 overflow-y-auto">
+              <div
+                className="px-4 pb-4 pt-2 border-t max-h-64 overflow-y-auto"
+                style={{ borderColor: "var(--border,#e5e7eb)" }}
+              >
                 <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground">
                   {policy.content}
                 </pre>
@@ -554,10 +589,8 @@ function PoliciesStep({
       )}
 
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button type="submit">Continue</Button>
+        <SecondaryButton onClick={onBack}>Back</SecondaryButton>
+        <PrimaryButton>Continue</PrimaryButton>
       </div>
     </form>
   );
@@ -605,29 +638,38 @@ function ReviewStep({
 
   const acceptedPolicyList = policies.filter((p) => acceptedPolicies.has(p.type));
   const dep = depositLabel(service);
-
   const questionMap = new Map(service.questions.map((q) => [q.id, q]));
 
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Review your booking</h2>
+  const displayDate = new Intl.DateTimeFormat("en-GB", { dateStyle: "full" }).format(
+    new Date(dateStr + "T12:00:00Z"),
+  );
 
-      {/* Appointment details */}
-      <section className="rounded-xl border divide-y text-sm">
-        <div className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+  return (
+    <div className="space-y-5">
+      <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+        Review your booking
+      </h2>
+
+      <section
+        className="rounded-2xl border divide-y text-sm overflow-hidden"
+        style={{ borderColor: "var(--border,#e5e7eb)" }}
+      >
+        <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Appointment
         </div>
         <Row label="Service" value={service.name} />
-        <Row label="Date" value={formatDisplayDate(dateStr)} />
-        <Row label="Time" value={formatDisplayTime(timeStr)} />
+        <Row label="Date" value={displayDate} />
+        <Row label="Time" value={timeStr} />
         <Row label="Duration" value={formatDuration(service.durationMins)} />
         <Row label="Price" value={formatGBP(service.pricePence)} />
         {dep && <Row label="Payment" value={dep} />}
       </section>
 
-      {/* Customer details */}
-      <section className="rounded-xl border divide-y text-sm">
-        <div className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+      <section
+        className="rounded-2xl border divide-y text-sm overflow-hidden"
+        style={{ borderColor: "var(--border,#e5e7eb)" }}
+      >
+        <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
           Your details
         </div>
         <Row label="Name" value={`${customer.firstName} ${customer.lastName}`} />
@@ -636,10 +678,12 @@ function ReviewStep({
         {customer.notes && <Row label="Notes" value={customer.notes} />}
       </section>
 
-      {/* Service questions */}
       {answers.length > 0 && (
-        <section className="rounded-xl border divide-y text-sm">
-          <div className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <section
+          className="rounded-2xl border divide-y text-sm overflow-hidden"
+          style={{ borderColor: "var(--border,#e5e7eb)" }}
+        >
+          <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Additional information
           </div>
           {answers.map((a) => (
@@ -652,15 +696,17 @@ function ReviewStep({
         </section>
       )}
 
-      {/* Policies */}
       {acceptedPolicyList.length > 0 && (
-        <section className="rounded-xl border divide-y text-sm">
-          <div className="px-4 py-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <section
+          className="rounded-2xl border divide-y text-sm overflow-hidden"
+          style={{ borderColor: "var(--border,#e5e7eb)" }}
+        >
+          <div className="px-4 py-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
             Policies accepted
           </div>
           {acceptedPolicyList.map((p) => (
-            <div key={p.type} className="px-4 py-3 flex items-center gap-2">
-              <span className="text-green-600 shrink-0" aria-hidden="true">✓</span>
+            <div key={p.type} className="px-4 py-3 flex items-center gap-2 text-sm">
+              <span className="shrink-0 text-green-600" aria-hidden="true">✓</span>
               {p.title}
             </div>
           ))}
@@ -669,7 +715,7 @@ function ReviewStep({
 
       {submitError && (
         <div
-          className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
         >
           {submitError}
@@ -677,43 +723,23 @@ function ReviewStep({
       )}
 
       <div className="flex justify-between pt-2">
-        <Button type="button" variant="outline" onClick={onBack} disabled={isPending}>
+        <SecondaryButton onClick={onBack} disabled={isPending}>
           Back
-        </Button>
-        <Button
-          type="button"
-          onClick={onSubmit}
-          disabled={isPending}
-          style={{ minWidth: "10rem" }}
-        >
+        </SecondaryButton>
+        <PrimaryButton type="button" onClick={onSubmit} disabled={isPending}>
           {isPending ? "Booking…" : "Confirm booking"}
-        </Button>
+        </PrimaryButton>
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="px-4 py-3 flex flex-wrap gap-2 justify-between text-sm">
-      <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className="text-right">{value}</span>
     </div>
   );
 }
 
 // ── Main orchestrator ─────────────────────────────────────────────────────────
 
-export function BookingConfirmFlow({
-  service,
-  policies,
-  dateStr,
-  timeStr,
-}: Props) {
+export function BookingConfirmFlow({ service, policies, dateStr, timeStr }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Compute ordered steps
   const steps: Step[] = ["details"];
   if (service.questions.length > 0) steps.push("questions");
   if (policies.length > 0) steps.push("policies");
@@ -779,7 +805,6 @@ export function BookingConfirmFlow({
 
   return (
     <div>
-      <BookingSummaryBar service={service} dateStr={dateStr} timeStr={timeStr} />
       <StepIndicator steps={steps} current={currentStep} />
 
       {currentStep === "details" && (

@@ -2,8 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Clock, ArrowRight } from "lucide-react";
 import { getAvailableDatesForMonth, getAvailableSlotsForDate } from "@/lib/actions/public-availability";
 
 const MONTH_NAMES = [
@@ -23,8 +22,8 @@ function firstDayOfWeek(year: number, month: number): number {
 interface Props {
   serviceSlug: string;
   initialYear: number;
-  initialMonth: number; // 1-based
-  initialAvailableDates: string[]; // YYYY-MM-DD
+  initialMonth: number;
+  initialAvailableDates: string[];
   timezone: string;
 }
 
@@ -58,7 +57,6 @@ export function BookingDateTimePicker({
     setSelectedDate(null);
     setSlots([]);
     setSelectedTime(null);
-
     startMonthTransition(async () => {
       const dates = await getAvailableDatesForMonth(serviceSlug, newYear, newMonth);
       setAvailableDates(new Set(dates));
@@ -73,7 +71,6 @@ export function BookingDateTimePicker({
     setSelectedDate(null);
     setSlots([]);
     setSelectedTime(null);
-
     startMonthTransition(async () => {
       const dates = await getAvailableDatesForMonth(serviceSlug, newYear, newMonth);
       setAvailableDates(new Set(dates));
@@ -85,61 +82,67 @@ export function BookingDateTimePicker({
     setSelectedDate(dateStr);
     setSelectedTime(null);
     setSlots([]);
-
     startSlotsTransition(async () => {
       const times = await getAvailableSlotsForDate(serviceSlug, dateStr);
       setSlots(times);
     });
   }
 
-  // Build calendar grid
   const totalDays = daysInMonth(year, month);
   const startDay = firstDayOfWeek(year, month);
   const cells: (number | null)[] = [
     ...Array<null>(startDay).fill(null),
     ...Array.from({ length: totalDays }, (_, i) => i + 1),
   ];
-  // Pad to complete last row
   while (cells.length % 7 !== 0) cells.push(null);
 
-  // Never allow going before current month
   const canGoPrev = !(year === today.getFullYear() && month <= today.getMonth() + 1);
 
+  const selectedDateDisplay = selectedDate
+    ? new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(
+        new Date(selectedDate + "T12:00:00Z"),
+      )
+    : null;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Calendar */}
-      <div className="rounded-xl border bg-card p-4 sm:p-6">
+      <div
+        className="rounded-2xl border p-5 sm:p-6"
+        style={{ borderColor: "var(--border,#e5e7eb)" }}
+      >
         {/* Month navigation */}
-        <div className="flex items-center justify-between mb-4">
-          <Button
+        <div className="flex items-center justify-between mb-5">
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
             onClick={goToPrevMonth}
             disabled={!canGoPrev || isLoadingMonth}
             aria-label="Previous month"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-          </Button>
-          <h2 className="text-base font-semibold tabular-nums">
+          </button>
+          <h2
+            className="text-base font-semibold tabular-nums"
+            style={{ color: "var(--foreground)" }}
+          >
             {MONTH_NAMES[month - 1]} {year}
           </h2>
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
             onClick={goToNextMonth}
             disabled={isLoadingMonth}
             aria-label="Next month"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </Button>
+          </button>
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 text-center mb-1">
+        <div className="grid grid-cols-7 text-center mb-2">
           {DAY_LABELS.map((d) => (
-            <div key={d} className="text-xs font-medium text-muted-foreground py-1">
+            <div key={d} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/50 py-1">
               {d}
             </div>
           ))}
@@ -147,7 +150,7 @@ export function BookingDateTimePicker({
 
         {/* Day grid */}
         <div
-          className={`grid grid-cols-7 gap-0.5 transition-opacity ${isLoadingMonth ? "opacity-40 pointer-events-none" : ""}`}
+          className={`grid grid-cols-7 gap-1 transition-opacity ${isLoadingMonth ? "opacity-30 pointer-events-none" : ""}`}
           role="grid"
           aria-label={`${MONTH_NAMES[month - 1]} ${year}`}
         >
@@ -157,6 +160,7 @@ export function BookingDateTimePicker({
             const isAvailable = availableDates.has(dateStr);
             const isSelected = selectedDate === dateStr;
             const isPast = dateStr < todayStr;
+            const isToday = dateStr === todayStr;
 
             return (
               <button
@@ -164,21 +168,30 @@ export function BookingDateTimePicker({
                 type="button"
                 onClick={() => handleDayClick(dateStr)}
                 disabled={!isAvailable || isPast}
-                aria-label={`${day} ${MONTH_NAMES[month - 1]}`}
+                aria-label={`${day} ${MONTH_NAMES[month - 1]}${isAvailable ? ", available" : ", unavailable"}`}
                 aria-pressed={isSelected}
                 aria-disabled={!isAvailable || isPast}
                 className={[
-                  "h-9 w-full rounded-lg text-sm font-medium transition-colors",
+                  "relative h-10 w-full rounded-xl text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1",
                   isSelected
-                    ? "bg-foreground text-background"
+                    ? "font-semibold text-background"
                     : isAvailable && !isPast
                     ? "hover:bg-muted cursor-pointer"
-                    : "text-muted-foreground/40 cursor-default",
+                    : "text-muted-foreground/30 cursor-default",
+                  isToday && !isSelected ? "ring-1 ring-inset ring-muted-foreground/30" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
+                style={isSelected ? { background: "var(--foreground)", color: "var(--background)" } : {}}
               >
                 {day}
+                {isAvailable && !isPast && !isSelected && (
+                  <span
+                    className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full"
+                    style={{ background: "var(--primary,#2d2d2d)", opacity: 0.4 }}
+                    aria-hidden="true"
+                  />
+                )}
               </button>
             );
           })}
@@ -191,67 +204,92 @@ export function BookingDateTimePicker({
         )}
       </div>
 
-      {/* Time slot grid */}
+      {/* Time slots */}
       {selectedDate && (
-        <div className="rounded-xl border bg-card p-4 sm:p-6">
-          <h3 className="text-sm font-semibold mb-4 flex items-center gap-1.5">
+        <div
+          className="rounded-2xl border p-5 sm:p-6"
+          style={{ borderColor: "var(--border,#e5e7eb)" }}
+        >
+          <h3
+            className="flex items-center gap-2 text-sm font-semibold mb-5"
+            style={{ color: "var(--foreground)" }}
+          >
             <Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            Available times
-            <span className="text-muted-foreground font-normal">
-              — {new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(new Date(selectedDate + "T12:00:00Z"))}
-            </span>
+            {selectedDateDisplay}
           </h3>
 
           {isLoadingSlots ? (
-            <p className="text-sm text-muted-foreground">Loading times…</p>
+            <p className="text-sm text-muted-foreground">Loading available times…</p>
           ) : slots.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No available times on this date.</p>
+            <p className="text-sm text-muted-foreground">
+              No times available on this date. Please select another day.
+            </p>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-              {slots.map((time) => (
-                <button
-                  key={time}
-                  type="button"
-                  onClick={() => setSelectedTime(time)}
-                  aria-pressed={selectedTime === time}
-                  className={[
-                    "rounded-lg border text-sm py-2 px-1 transition-colors font-medium",
-                    selectedTime === time
-                      ? "bg-foreground text-background border-foreground"
-                      : "border-border hover:bg-muted",
-                  ].join(" ")}
-                >
-                  {time}
-                </button>
-              ))}
+              {slots.map((time) => {
+                const isChosen = selectedTime === time;
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => setSelectedTime(time)}
+                    aria-pressed={isChosen}
+                    className={[
+                      "rounded-xl border py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1",
+                      isChosen
+                        ? "border-transparent text-background"
+                        : "hover:border-foreground/30 hover:bg-muted",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    style={
+                      isChosen
+                        ? { background: "var(--foreground)", borderColor: "var(--foreground)", color: "var(--background)" }
+                        : { borderColor: "var(--border,#e5e7eb)" }
+                    }
+                  >
+                    {time}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Continue */}
+      {/* Continue CTA */}
       {selectedDate && selectedTime && (
-        <div className="flex justify-end">
-          <Button
+        <div
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl p-5"
+          style={{ background: "var(--secondary,#f5f5f5)" }}
+        >
+          <div>
+            <p className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+              {selectedTime} · {selectedDateDisplay}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">All times in {timezone}</p>
+          </div>
+          <button
             type="button"
-            size="lg"
             onClick={() =>
               router.push(
                 `/book/${serviceSlug}/confirm?date=${selectedDate}&time=${encodeURIComponent(selectedTime)}`,
               )
             }
+            className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shrink-0 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ background: "var(--button,#1a1a1a)", color: "var(--button-foreground,#fff)" }}
           >
-            Continue — {selectedTime} on{" "}
-            {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(
-              new Date(selectedDate + "T12:00:00Z"),
-            )}
-          </Button>
+            Continue
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        All times shown in {timezone}.
-      </p>
+      {!selectedDate && (
+        <p className="text-xs text-muted-foreground">
+          Select a highlighted date to see available times. All times shown in {timezone}.
+        </p>
+      )}
     </div>
   );
 }

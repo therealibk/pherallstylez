@@ -18,12 +18,12 @@ describe("NAV_ENTRIES", () => {
     (e): e is Extract<typeof e, { type: "group" }> => e.type === "group",
   );
 
-  it("contains at least 8 top-level items", () => {
-    expect(topLevelItems.length).toBeGreaterThanOrEqual(8);
+  it("contains at least 8 total nav items across all groups", () => {
+    expect(allItems.length).toBeGreaterThanOrEqual(8);
   });
 
   it("includes Dashboard, Calendar, Appointments, Customers, Services", () => {
-    const labels = topLevelItems.map((e) => e.label);
+    const labels = allItems.map((e) => e.label);
     expect(labels).toContain("Dashboard");
     expect(labels).toContain("Calendar");
     expect(labels).toContain("Appointments");
@@ -66,7 +66,7 @@ describe("NAV_ENTRIES", () => {
   });
 
   it("Dashboard href is /admin/dashboard", () => {
-    const dashboard = topLevelItems.find((e) => e.label === "Dashboard");
+    const dashboard = allItems.find((e) => e.label === "Dashboard");
     expect(dashboard?.href).toBe("/admin/dashboard");
   });
 

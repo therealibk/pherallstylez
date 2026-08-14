@@ -23,19 +23,19 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-lg border border-dashed px-6 py-12 text-center",
+        "flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-8 py-14 text-center",
         className,
       )}
     >
-      <div className="mb-4 rounded-full bg-muted p-3">
-        <Icon className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <Icon className="h-5 w-5 text-muted-foreground/60" aria-hidden="true" />
       </div>
-      <h3 className="mb-1 text-sm font-medium">{title}</h3>
-      <p className="max-w-xs text-sm text-muted-foreground">{description}</p>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <p className="mt-1.5 max-w-xs text-sm text-muted-foreground leading-relaxed">{description}</p>
       {action && (
         <Link
           href={action.href}
-          className="mt-4 inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-foreground px-3.5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           {action.label}
         </Link>

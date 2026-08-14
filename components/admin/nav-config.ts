@@ -23,6 +23,7 @@ import {
   Bell,
   UserCog,
   Palette,
+  Tag,
 } from "lucide-react";
 
 export type NavItem = {
@@ -41,52 +42,31 @@ export type NavEntry = ({ type: "item" } & NavItem) | NavGroup;
 
 export const NAV_ENTRIES: NavEntry[] = [
   {
-    type: "item",
-    label: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
+    type: "group",
+    label: "Overview",
+    items: [
+      { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    ],
   },
   {
-    type: "item",
-    label: "Calendar",
-    href: "/admin/calendar",
-    icon: Calendar,
+    type: "group",
+    label: "Bookings",
+    items: [
+      { label: "Calendar", href: "/admin/calendar", icon: Calendar },
+      { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },
+      { label: "Customers", href: "/admin/customers", icon: Users },
+      { label: "Payments", href: "/admin/payments", icon: CreditCard },
+    ],
   },
   {
-    type: "item",
-    label: "Appointments",
-    href: "/admin/appointments",
-    icon: CalendarDays,
-  },
-  {
-    type: "item",
-    label: "Customers",
-    href: "/admin/customers",
-    icon: Users,
-  },
-  {
-    type: "item",
+    type: "group",
     label: "Services",
-    href: "/admin/services",
-    icon: Scissors,
-  },
-  {
-    type: "item",
-    label: "Availability",
-    href: "/admin/availability",
-    icon: Clock,
-  },
-  {
-    type: "item",
-    label: "Blocked Times",
-    href: "/admin/blocked-times",
-    icon: CalendarX,
-  },
-  {
-    type: "item",
-    label: "Payments",
-    href: "/admin/payments",
-    icon: CreditCard,
+    items: [
+      { label: "Services", href: "/admin/services", icon: Scissors },
+      { label: "Categories", href: "/admin/services/categories", icon: Tag },
+      { label: "Availability", href: "/admin/availability", icon: Clock },
+      { label: "Blocked Times", href: "/admin/blocked-times", icon: CalendarX },
+    ],
   },
   {
     type: "group",
@@ -103,36 +83,12 @@ export const NAV_ENTRIES: NavEntry[] = [
     type: "group",
     label: "Policies",
     items: [
-      {
-        label: "Privacy Policy",
-        href: "/admin/policies/privacy-policy",
-        icon: Lock,
-      },
-      {
-        label: "Terms & Conditions",
-        href: "/admin/policies/terms-and-conditions",
-        icon: Scale,
-      },
-      {
-        label: "Booking Policy",
-        href: "/admin/policies/booking-policy",
-        icon: FileText,
-      },
-      {
-        label: "Appointment Policy",
-        href: "/admin/policies/appointment-policy",
-        icon: CalendarCheck,
-      },
-      {
-        label: "Cancellation Policy",
-        href: "/admin/policies/cancellation-policy",
-        icon: Ban,
-      },
-      {
-        label: "Refund Policy",
-        href: "/admin/policies/refund-policy",
-        icon: RotateCcw,
-      },
+      { label: "Privacy Policy", href: "/admin/policies/privacy-policy", icon: Lock },
+      { label: "Terms & Conditions", href: "/admin/policies/terms-and-conditions", icon: Scale },
+      { label: "Booking Policy", href: "/admin/policies/booking-policy", icon: FileText },
+      { label: "Appointment Policy", href: "/admin/policies/appointment-policy", icon: CalendarCheck },
+      { label: "Cancellation Policy", href: "/admin/policies/cancellation-policy", icon: Ban },
+      { label: "Refund Policy", href: "/admin/policies/refund-policy", icon: RotateCcw },
     ],
   },
   {
@@ -141,16 +97,8 @@ export const NAV_ENTRIES: NavEntry[] = [
     items: [
       { label: "Business", href: "/admin/settings/business", icon: Building2 },
       { label: "Booking", href: "/admin/settings/booking", icon: CalendarCog },
-      {
-        label: "Payments",
-        href: "/admin/settings/payments",
-        icon: CreditCard,
-      },
-      {
-        label: "Notifications",
-        href: "/admin/settings/notifications",
-        icon: Bell,
-      },
+      { label: "Payments", href: "/admin/settings/payments", icon: CreditCard },
+      { label: "Notifications", href: "/admin/settings/notifications", icon: Bell },
       { label: "Account", href: "/admin/settings/account", icon: UserCog },
     ],
   },
