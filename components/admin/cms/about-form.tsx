@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { saveAboutPageContent } from "@/lib/actions/cms";
 import { uploadCmsImage } from "@/lib/actions/appearance";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import type { AboutPageData } from "@/lib/cms-schemas";
 
 function AboutImageUpload({
@@ -95,7 +96,7 @@ export function AboutForm({ initial }: { initial: AboutPageData }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof Omit<AboutPageData, "imageUrl">) {
+  function field(key: keyof Pick<AboutPageData, "heading" | "ctaHeading" | "ctaDescription" | "ctaButtonText">) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
@@ -135,13 +136,12 @@ export function AboutForm({ initial }: { initial: AboutPageData }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="about-intro">Introduction</Label>
-              <Textarea
-                id="about-intro"
+              <Label>Introduction</Label>
+              <RichTextEditor
                 value={data.introduction}
-                onChange={field("introduction")}
+                onChange={(val) => setData((d) => ({ ...d, introduction: val }))}
                 placeholder="A short introduction paragraph shown at the top"
-                rows={3}
+                minHeight="80px"
               />
             </div>
           </fieldset>
@@ -150,14 +150,12 @@ export function AboutForm({ initial }: { initial: AboutPageData }) {
           <fieldset className="space-y-4">
             <legend className="text-sm font-semibold">Biography</legend>
             <div className="space-y-1.5">
-              <Label htmlFor="about-bio">Biography</Label>
-              <Textarea
-                id="about-bio"
+              <Label>Biography</Label>
+              <RichTextEditor
                 value={data.biography}
-                onChange={field("biography")}
+                onChange={(val) => setData((d) => ({ ...d, biography: val }))}
                 placeholder="Your full story — training, experience, passion for hair…"
-                rows={8}
-                className="min-h-[200px]"
+                minHeight="240px"
               />
             </div>
             <AboutImageUpload

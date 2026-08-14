@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { savePolicy } from "@/lib/actions/policy";
@@ -75,17 +75,12 @@ export function PolicyForm({ policy }: { policy: PolicyRecord }) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="policy-content">Content</Label>
-            <p className="text-xs text-muted-foreground">
-              Write in plain text. Paragraphs are separated by blank lines.
-            </p>
-            <Textarea
-              id="policy-content"
+            <Label>Content</Label>
+            <RichTextEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={20}
-              className="min-h-[400px] font-mono text-sm"
+              onChange={setContent}
               placeholder="Enter policy content here…"
+              minHeight="400px"
             />
           </div>
 

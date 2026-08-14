@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { saveContactPageCopy, saveBusinessContact } from "@/lib/actions/cms";
 import type { ContactPageData, BusinessContactData } from "@/lib/cms-schemas";
 
@@ -41,7 +42,7 @@ export function ContactPageCopyForm({ initial }: { initial: ContactPageData }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof ContactPageData) {
+  function field(key: keyof Pick<ContactPageData, "heading" | "openingHours">) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
@@ -81,13 +82,12 @@ export function ContactPageCopyForm({ initial }: { initial: ContactPageData }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="contact-intro">Introduction</Label>
-            <Textarea
-              id="contact-intro"
+            <Label>Introduction</Label>
+            <RichTextEditor
               value={data.introduction}
-              onChange={field("introduction")}
+              onChange={(val) => setData((d) => ({ ...d, introduction: val }))}
               placeholder="A friendly paragraph inviting visitors to reach out"
-              rows={3}
+              minHeight="80px"
             />
           </div>
           <div className="space-y-1.5">

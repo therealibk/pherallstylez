@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseAboutData } from "@/lib/cms-schemas";
+import { RichTextContent } from "@/components/public/rich-text-content";
 
 export const metadata: Metadata = { title: "About — Pherall" };
 
@@ -20,7 +21,10 @@ export default async function AboutPage() {
           {data.heading || "About"}
         </h1>
         {data.introduction && (
-          <p className="mt-4 text-lg text-muted-foreground">{data.introduction}</p>
+          <RichTextContent
+            content={data.introduction}
+            className="mt-4 text-lg text-muted-foreground [&_p]:mb-3 [&_p:last-child]:mb-0"
+          />
         )}
       </section>
 
@@ -28,16 +32,10 @@ export default async function AboutPage() {
       {(data.biography || data.imageUrl) && (
         <section className="max-w-3xl mx-auto px-6 pb-16 grid gap-10 md:grid-cols-[1fr_auto]">
           {data.biography && (
-            <div className="space-y-4 text-muted-foreground leading-relaxed">
-              {data.biography
-                .split(/\n\n+/)
-                .filter(Boolean)
-                .map((para, i) => (
-                  <p key={i} className="whitespace-pre-wrap">
-                    {para}
-                  </p>
-                ))}
-            </div>
+            <RichTextContent
+              content={data.biography}
+              className="text-muted-foreground leading-relaxed [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-6 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-3"
+            />
           )}
           {data.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element

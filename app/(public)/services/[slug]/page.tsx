@@ -5,6 +5,8 @@ import { Clock, Banknote, ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatGBP, formatDuration } from "@/lib/service-schemas";
 import { DepositType, QuestionType } from "@/lib/generated/prisma/client";
+import { RichTextContent } from "@/components/public/rich-text-content";
+import { plainTextFromRichText } from "@/lib/rich-text";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -19,7 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!service) return { title: "Service not found" };
   return {
     title: service.name,
-    description: service.description ?? undefined,
+    description: service.description
+      ? plainTextFromRichText(service.description).slice(0, 160) || undefined
+      : undefined,
   };
 }
 
@@ -128,9 +132,10 @@ export default async function ServiceDetailPage({ params }: Props) {
         {service.description && (
           <div>
             <h2 className="text-lg font-semibold mb-3">About this service</h2>
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {service.description}
-            </p>
+            <RichTextContent
+              content={service.description}
+              className="text-muted-foreground leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-3 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-4"
+            />
           </div>
         )}
 

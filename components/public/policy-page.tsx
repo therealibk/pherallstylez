@@ -1,5 +1,6 @@
 import type { PolicyType } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
+import { RichTextContent } from "@/components/public/rich-text-content";
 
 interface Props {
   type: PolicyType;
@@ -21,11 +22,6 @@ export async function PolicyPageContent({ type }: Props) {
     );
   }
 
-  const paragraphs = policy.content
-    .split(/\n\n+/)
-    .map((para) => para.trim())
-    .filter(Boolean);
-
   const updatedDate = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "long",
@@ -38,13 +34,9 @@ export async function PolicyPageContent({ type }: Props) {
       <p className="mt-2 text-sm text-muted-foreground">
         Version {policy.version} · Last updated {updatedDate}
       </p>
-      <div className="mt-8 space-y-4 text-sm leading-relaxed text-foreground/90">
-        {paragraphs.length > 0 ? (
-          paragraphs.map((para, i) => (
-            <p key={i} className="whitespace-pre-wrap">
-              {para}
-            </p>
-          ))
+      <div className="mt-8 text-sm leading-relaxed text-foreground/90 [&_p]:mb-3 [&_h2]:mt-6 [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mt-4 [&_h3]:text-sm [&_h3]:font-semibold [&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground">
+        {policy.content ? (
+          <RichTextContent content={policy.content} />
         ) : (
           <p className="text-muted-foreground">No content available yet.</p>
         )}

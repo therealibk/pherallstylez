@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseContactData } from "@/lib/cms-schemas";
+import { RichTextContent } from "@/components/public/rich-text-content";
 
 export const metadata: Metadata = { title: "Contact — Pherall" };
 
@@ -20,7 +21,10 @@ export default async function ContactPage() {
           {copy.heading || "Contact"}
         </h1>
         {copy.introduction && (
-          <p className="mt-4 text-muted-foreground max-w-xl">{copy.introduction}</p>
+          <RichTextContent
+            content={copy.introduction}
+            className="mt-4 text-muted-foreground max-w-xl [&_p]:mb-2 [&_p:last-child]:mb-0"
+          />
         )}
 
         <div className="mt-10 grid gap-8 md:grid-cols-2">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { RichTextContent } from "@/components/public/rich-text-content";
 
 export const metadata: Metadata = { title: "FAQ — Pherall" };
 
@@ -23,8 +24,11 @@ export default async function FaqPage() {
           {faqs.map((faq) => (
             <div key={faq.id} className="border-b pb-6 last:border-0 last:pb-0">
               <dt className="font-medium">{faq.question}</dt>
-              <dd className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
-                {faq.answer}
+              <dd className="mt-2">
+                <RichTextContent
+                  content={faq.answer}
+                  className="text-sm text-muted-foreground [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-2"
+                />
               </dd>
             </div>
           ))}

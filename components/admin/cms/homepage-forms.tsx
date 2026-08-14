@@ -4,8 +4,8 @@ import { useState, useTransition, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   saveHeroSection,
   saveHomepageAboutSection,
@@ -135,8 +135,8 @@ export function HeroForm({ initial }: { initial: HeroData }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof Pick<HeroData, "heading" | "description" | "buttonText">) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  function field(key: keyof Pick<HeroData, "heading" | "buttonText">) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
 
@@ -175,13 +175,12 @@ export function HeroForm({ initial }: { initial: HeroData }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="hero-description">Description</Label>
-            <Textarea
-              id="hero-description"
+            <Label>Description</Label>
+            <RichTextEditor
               value={data.description}
-              onChange={field("description")}
+              onChange={(val) => setData((d) => ({ ...d, description: val }))}
               placeholder="Short tagline or sub-heading"
-              rows={3}
+              minHeight="80px"
             />
           </div>
           <div className="space-y-1.5">
@@ -219,8 +218,8 @@ export function HomepageAboutSectionForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof Pick<HomepageAboutSectionData, "heading" | "description" | "buttonText">) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  function field(key: keyof Pick<HomepageAboutSectionData, "heading" | "buttonText">) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
 
@@ -259,13 +258,11 @@ export function HomepageAboutSectionForm({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ha-description">Description</Label>
-            <Textarea
-              id="ha-description"
+            <Label>Description</Label>
+            <RichTextEditor
               value={data.description}
-              onChange={field("description")}
+              onChange={(val) => setData((d) => ({ ...d, description: val }))}
               placeholder="A short paragraph about your work"
-              rows={4}
             />
           </div>
           <ImageUploadField
@@ -304,8 +301,8 @@ export function CtaForm({ initial }: { initial: CtaData }) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function field(key: keyof CtaData) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  function field(key: keyof Pick<CtaData, "heading" | "buttonText">) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
       setData((d) => ({ ...d, [key]: e.target.value }));
   }
 
@@ -344,13 +341,12 @@ export function CtaForm({ initial }: { initial: CtaData }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cta-description">Description</Label>
-            <Textarea
-              id="cta-description"
+            <Label>Description</Label>
+            <RichTextEditor
               value={data.description}
-              onChange={field("description")}
+              onChange={(val) => setData((d) => ({ ...d, description: val }))}
               placeholder="Invite visitors to make an appointment"
-              rows={3}
+              minHeight="80px"
             />
           </div>
           <div className="space-y-1.5">

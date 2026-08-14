@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseHomepageData } from "@/lib/cms-schemas";
 import { formatGBP, formatDuration } from "@/lib/service-schemas";
+import { RichTextContent } from "@/components/public/rich-text-content";
+import { plainTextFromRichText } from "@/lib/rich-text";
 
 export const metadata: Metadata = {
   title: "Pherall — Professional Hair Styling",
@@ -54,9 +56,10 @@ export default async function HomePage() {
                 {hero.heading || "Professional Hair Styling"}
               </h1>
               {hero.description && (
-                <p className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed">
-                  {hero.description}
-                </p>
+                <RichTextContent
+                  content={hero.description}
+                  className="mt-4 text-lg text-white/80 max-w-xl leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0"
+                />
               )}
               <Link
                 href="/book"
@@ -73,9 +76,10 @@ export default async function HomePage() {
               {hero.heading || "Professional Hair Styling"}
             </h1>
             {hero.description && (
-              <p className="mt-6 text-xl text-muted-foreground max-w-xl leading-relaxed">
-                {hero.description}
-              </p>
+              <RichTextContent
+                content={hero.description}
+                className="mt-6 text-xl text-muted-foreground max-w-xl leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0"
+              />
             )}
             <Link
               href="/book"
@@ -97,7 +101,10 @@ export default async function HomePage() {
                 {aboutSection.heading}
               </h2>
               {aboutSection.description && (
-                <p className="mt-5 text-muted-foreground leading-relaxed">{aboutSection.description}</p>
+                <RichTextContent
+                  content={aboutSection.description}
+                  className="mt-5 text-muted-foreground leading-relaxed [&_p]:mb-3 [&_p:last-child]:mb-0"
+                />
               )}
               {aboutSection.buttonText && (
                 <a
@@ -158,7 +165,9 @@ export default async function HomePage() {
                   <div className="p-4 space-y-1.5">
                     <h3 className="font-semibold text-base leading-tight">{s.name}</h3>
                     {s.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">{s.description}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {plainTextFromRichText(s.description)}
+                      </p>
                     )}
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-sm font-medium">{formatGBP(s.pricePence)}</span>
@@ -203,9 +212,10 @@ export default async function HomePage() {
           <div className="max-w-5xl mx-auto px-6 py-20 text-center">
             <h2 className="text-3xl font-semibold tracking-tight">{cta.heading}</h2>
             {cta.description && (
-              <p className="mt-5 opacity-80 max-w-lg mx-auto leading-relaxed">
-                {cta.description}
-              </p>
+              <RichTextContent
+                content={cta.description}
+                className="mt-5 opacity-80 max-w-lg mx-auto leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0"
+              />
             )}
             <Link
               href="/book"

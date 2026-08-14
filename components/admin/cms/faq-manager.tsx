@@ -5,8 +5,8 @@ import { Plus, Pencil, Trash2, X, Check, ChevronDown, ChevronUp } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,6 +30,22 @@ interface Props {
 
 type EditState = { question: string; answer: string; published: boolean };
 const emptyEdit: EditState = { question: "", answer: "", published: false };
+
+/** Returns false when the value is empty — handles both plain text and TipTap JSON. */
+function hasContent(value: string): boolean {
+  if (!value.trim()) return false;
+  try {
+    const doc = JSON.parse(value);
+    if (doc?.type !== "doc") return true; // unknown format — assume non-empty
+    function hasText(node: { type: string; text?: string; content?: unknown[] }): boolean {
+      if (node.type === "text") return (node.text?.trim().length ?? 0) > 0;
+      return (node.content ?? []).some((c) => hasText(c as typeof node));
+    }
+    return (doc.content ?? []).some((n: { type: string; text?: string; content?: unknown[] }) => hasText(n));
+  } catch {
+    return value.trim().length > 0;
+  }
+}
 
 export function FaqManager({ initial }: Props) {
   const [faqs, setFaqs] = useState<FaqItem[]>(initial);
@@ -57,7 +73,7 @@ export function FaqManager({ initial }: Props) {
   function handleAdd() {
     setAddError(null);
     if (!addForm.question.trim()) { setAddError("Question is required."); return; }
-    if (!addForm.answer.trim()) { setAddError("Answer is required."); return; }
+    if (!hasContent(addForm.answer)) { setAddError("Answer is required."); return; }
     startTransition(async () => {
       const result = await createFaq({
         question: addForm.question.trim(),
@@ -75,7 +91,7 @@ export function FaqManager({ initial }: Props) {
   }
 
   function commitEdit(id: string) {
-    if (!editForm.question.trim() || !editForm.answer.trim()) return;
+    if (!editForm.question.trim() || !hasContent(editForm.answer)) return;
     startTransition(async () => {
       const result = await updateFaq(id, {
         question: editForm.question.trim(),
@@ -162,15 +178,11 @@ export function FaqManager({ initial }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-answer">Answer</Label>
-              <Textarea
-                id="new-answer"
+              <Label>Answer</Label>
+              <RichTextEditor
                 value={addForm.answer}
-                onChange={(e) =>
-                  setAddForm((f) => ({ ...f, answer: e.target.value }))
-                }
+                onChange={(val) => setAddForm((f) => ({ ...f, answer: val }))}
                 placeholder="Your answer…"
-                rows={4}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -233,12 +245,9 @@ export function FaqManager({ initial }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Answer</Label>
-                  <Textarea
+                  <RichTextEditor
                     value={editForm.answer}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, answer: e.target.value }))
-                    }
-                    rows={4}
+                    onChange={(val) => setEditForm((f) => ({ ...f, answer: val }))}
                   />
                 </div>
                 <div className="flex items-center gap-2">
