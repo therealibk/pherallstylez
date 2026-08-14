@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Calendar, Clock, Scissors, ArrowLeft } from "lucide-react";
 import { getManageBookingData } from "@/lib/actions/manage-booking";
 import { ManageBookingActions } from "./manage-booking-actions";
+import { formatDuration } from "@/lib/service-format-utils";
 
 export const metadata: Metadata = { title: "Manage your appointment" };
 
@@ -38,6 +39,15 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   RESCHEDULED:{ label: "Rescheduled",           color: "#0284c7" },
 };
 
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING:             "Awaiting payment",
+  DEPOSIT_PAID:        "Deposit paid",
+  PAID_IN_FULL:        "Paid in full",
+  FAILED:              "Payment failed",
+  REFUNDED:            "Refunded",
+  PARTIALLY_REFUNDED:  "Partially refunded",
+};
+
 interface Props {
   params: Promise<{ token: string }>;
 }
@@ -51,6 +61,14 @@ export default async function ManageBookingPage({ params }: Props) {
   const { appointment: appt, canCancel, canReschedule, cancellationDeadlineHours, reschedulingDeadlineHours } = data;
   const statusInfo = STATUS_LABELS[appt.status] ?? { label: appt.status, color: "#71717a" };
   const balance = appt.pricePence - appt.depositPence;
+
+  // Determine payment to display — prefer PAID_IN_FULL > DEPOSIT_PAID > others
+  const PAYMENT_PRIORITY: Record<string, number> = {
+    PAID_IN_FULL: 0, PARTIALLY_REFUNDED: 1, DEPOSIT_PAID: 2, REFUNDED: 3, FAILED: 4, PENDING: 5,
+  };
+  const latestPayment = [...appt.payments].sort(
+    (a, b) => (PAYMENT_PRIORITY[a.status] ?? 99) - (PAYMENT_PRIORITY[b.status] ?? 99),
+  )[0] ?? null;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--secondary, #f9fafb)" }}>
@@ -102,6 +120,7 @@ export default async function ManageBookingPage({ params }: Props) {
               </dt>
               <dd className="text-sm text-right">{formatTime(appt.startAt, appt.timezone)}</dd>
             </div>
+            <Row label="Duration" value={formatDuration(appt.durationMins)} />
             <Row label="Price" value={formatCurrency(appt.pricePence)} />
             {appt.depositPence > 0 && <Row label="Deposit" value={formatCurrency(appt.depositPence)} />}
             {balance > 0 && balance < appt.pricePence && (
@@ -109,6 +128,32 @@ export default async function ManageBookingPage({ params }: Props) {
             )}
           </dl>
         </div>
+
+        {/* Payment info — only shown when a payment record exists */}
+        {latestPayment && (
+          <div className="rounded-2xl border border-border bg-card overflow-hidden mb-6">
+            <div className="px-5 py-4 border-b border-border">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                Payment
+              </p>
+            </div>
+            <dl className="divide-y divide-border">
+              <Row
+                label="Status"
+                value={PAYMENT_STATUS_LABELS[latestPayment.status] ?? latestPayment.status}
+              />
+              {(latestPayment.status === "DEPOSIT_PAID" ||
+                latestPayment.status === "PAID_IN_FULL" ||
+                latestPayment.status === "PARTIALLY_REFUNDED" ||
+                latestPayment.status === "REFUNDED") && (
+                <Row label="Amount paid" value={formatCurrency(latestPayment.amountPence)} />
+              )}
+              {latestPayment.status === "DEPOSIT_PAID" && balance > 0 && (
+                <Row label="Remaining balance" value={formatCurrency(balance)} />
+              )}
+            </dl>
+          </div>
+        )}
 
         {/* Customer info */}
         <div className="rounded-2xl border border-border bg-card overflow-hidden mb-6">

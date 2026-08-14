@@ -118,11 +118,11 @@ export async function getBookingPageData(
 
   if (!service) return null;
 
-  // Sort policies: Booking Policy first, Cancellation second, Refund third, others after
+  // Sort policies: Booking Policy first, then Refund, then Cancellation, others after
   const POLICY_ORDER: Record<string, number> = {
     BOOKING_POLICY: 0,
-    CANCELLATION_POLICY: 1,
-    REFUND_POLICY: 2,
+    REFUND_POLICY: 1,
+    CANCELLATION_POLICY: 2,
     APPOINTMENT_POLICY: 3,
     TERMS_AND_CONDITIONS: 4,
     PRIVACY_POLICY: 5,
