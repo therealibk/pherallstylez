@@ -485,3 +485,16 @@ model StripeWebhookEvent {
 
   @@index([processed, createdAt])
 }
+
+// CMS-editable transactional email templates; one row per NotificationType.
+// body is stored as TipTap JSON — admin edits via the rich-text editor.
+// subject and body both support {{variable_name}} placeholder substitution.
+// When active=false the system falls back to the hardcoded default template.
+model EmailTemplate {
+  id        String           @id @default(cuid())
+  type      NotificationType @unique
+  subject   String
+  body      String
+  active    Boolean          @default(true)
+  updatedAt DateTime         @updatedAt
+}

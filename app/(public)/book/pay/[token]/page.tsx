@@ -75,12 +75,8 @@ export default async function PaymentPage({ params }: Props) {
     redirect(`/book/confirmation/${token}`);
   }
 
-  const [bookingSettings, businessSettings] = await Promise.all([
-    db.bookingSettings.findFirst({ select: { depositRequired: true } }),
-    db.businessSettings.findFirst({ select: { currency: true } }),
-  ]);
+  const businessSettings = await db.businessSettings.findFirst({ select: { currency: true } });
 
-  const depositRequired = bookingSettings?.depositRequired ?? true;
   const currency = businessSettings?.currency ?? "GBP";
 
   const canPayDeposit = appt.depositPence > 0 && appt.depositPence < appt.pricePence;
@@ -160,7 +156,6 @@ export default async function PaymentPage({ params }: Props) {
             rawToken={token}
             depositPence={appt.depositPence}
             pricePence={appt.pricePence}
-            depositRequired={depositRequired}
             depositLabel={depositLabel}
             currency={currency}
           />

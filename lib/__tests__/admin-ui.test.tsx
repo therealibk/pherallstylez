@@ -37,9 +37,15 @@ describe("NAV_ENTRIES", () => {
     expect(groupLabels).toContain("Settings");
   });
 
-  it("Content group has exactly 5 items", () => {
+  it("Content group has exactly 6 items", () => {
     const content = groups.find((g) => g.label === "Content");
-    expect(content?.items).toHaveLength(5);
+    expect(content?.items).toHaveLength(6);
+  });
+
+  it("Content group includes Email Templates", () => {
+    const content = groups.find((g) => g.label === "Content");
+    const labels = content?.items.map((i) => i.label) ?? [];
+    expect(labels).toContain("Email Templates");
   });
 
   it("Policies group has exactly 6 items", () => {

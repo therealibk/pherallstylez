@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { createCheckoutSession } from "@/lib/actions/payments";
 
 interface Props {
   rawToken: string;
   depositPence: number;
   pricePence: number;
-  depositRequired: boolean;
   depositLabel: string | null;
   currency: string;
 }
@@ -24,17 +22,14 @@ export function PayOptionsClient({
   rawToken,
   depositPence,
   pricePence,
-  depositRequired,
   depositLabel,
   currency,
 }: Props) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [loadingType, setLoadingType] = useState<"DEPOSIT" | "FULL" | "LATER" | null>(null);
+  const [loadingType, setLoadingType] = useState<"DEPOSIT" | "FULL" | null>(null);
 
   const canPayDeposit = depositPence > 0 && depositPence < pricePence;
-  const canPayLater = !depositRequired;
 
   function handlePay(type: "DEPOSIT" | "FULL") {
     setError(null);
@@ -42,18 +37,12 @@ export function PayOptionsClient({
     startTransition(async () => {
       const result = await createCheckoutSession(rawToken, type);
       if (result.success) {
-        // Redirect to Stripe Checkout
         window.location.href = result.url;
       } else {
         setError(result.error);
         setLoadingType(null);
       }
     });
-  }
-
-  function handlePayLater() {
-    setLoadingType("LATER");
-    router.push(`/book/confirmation/${rawToken}`);
   }
 
   return (
@@ -118,25 +107,6 @@ export function PayOptionsClient({
             </span>
           </div>
         </button>
-
-        {/* Pay later option */}
-        {canPayLater && (
-          <button
-            type="button"
-            onClick={handlePayLater}
-            disabled={isPending}
-            className="w-full rounded-2xl border border-border px-5 py-4 text-left transition-colors hover:bg-muted/30 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            <div>
-              <p className="font-semibold text-sm" style={{ color: "var(--foreground)" }}>
-                Pay later
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Confirm booking now — payment collected at appointment
-              </p>
-            </div>
-          </button>
-        )}
       </div>
 
       <p className="text-xs text-muted-foreground text-center pt-2">

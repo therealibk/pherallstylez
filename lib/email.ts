@@ -1,6 +1,11 @@
 import { Resend } from "resend";
 import { db } from "@/lib/db";
-import { buildEmailTemplate, type AppointmentEmailData } from "@/lib/email-templates";
+import {
+  buildEmailTemplate,
+  buildEmailFromCmsTemplate,
+  buildEmailVars,
+  type AppointmentEmailData,
+} from "@/lib/email-templates";
 import type { NotificationType } from "@/lib/generated/prisma/client";
 
 /** Resolve email config: DB row takes precedence over env vars. */
@@ -12,6 +17,22 @@ async function getEmailConfig(): Promise<{ apiKey: string | null; from: string }
   const from =
     settings?.emailFrom || process.env.EMAIL_FROM || "noreply@example.com";
   return { apiKey, from };
+}
+
+/** Load active CMS template for a given type, or null if not found / inactive. */
+async function loadCmsTemplate(
+  type: NotificationType,
+): Promise<{ subject: string; body: string } | null> {
+  try {
+    const tmpl = await db.emailTemplate.findUnique({
+      where: { type },
+      select: { subject: true, body: true, active: true },
+    });
+    if (!tmpl || !tmpl.active) return null;
+    return { subject: tmpl.subject, body: tmpl.body };
+  } catch {
+    return null;
+  }
 }
 
 export interface SendNotificationInput {
@@ -29,6 +50,7 @@ export interface SendNotificationInput {
  * Idempotent: the unique deduplicationKey prevents duplicate sends.
  * Fire-and-forget safe: errors are logged but never thrown.
  * Graceful no-op: if no API key is configured, skips send but still logs.
+ * CMS-aware: loads the active CMS template when available, falls back to hardcoded.
  */
 export async function sendNotification(input: SendNotificationInput): Promise<void> {
   const { appointmentId, type, recipientEmail, deduplicationKey, data, reminderOffsetHours } = input;
@@ -54,8 +76,25 @@ export async function sendNotification(input: SendNotificationInput): Promise<vo
     return;
   }
 
+  // Resolve subject + html from CMS template (preferred) or hardcoded fallback
+  const cmsTemplate = await loadCmsTemplate(type);
+  let subject: string;
+  let html: string;
+
+  if (cmsTemplate) {
+    const vars = buildEmailVars(type, { ...data, reminderOffsetHours });
+    ({ subject, html } = buildEmailFromCmsTemplate(
+      cmsTemplate.subject,
+      cmsTemplate.body,
+      vars,
+      data.businessName,
+      data.manageUrl,
+    ));
+  } else {
+    ({ subject, html } = buildEmailTemplate(type, { ...data, reminderOffsetHours }));
+  }
+
   const { apiKey, from } = await getEmailConfig();
-  const { subject, html } = buildEmailTemplate(type, data);
 
   if (!apiKey) {
     console.log(`[email] No API key configured — skipping send for ${deduplicationKey}`);

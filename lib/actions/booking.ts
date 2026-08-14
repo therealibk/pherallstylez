@@ -20,6 +20,7 @@ import {
   makeLockKey,
   validateAnswers,
 } from "@/lib/booking-utils";
+import { sendNotification } from "@/lib/email";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -111,12 +112,24 @@ export async function getBookingPageData(
     db.policy.findMany({
       where: { published: true },
       select: { type: true, title: true, content: true, version: true },
-      orderBy: { type: "asc" },
     }),
     db.businessSettings.findFirst({ select: { timezone: true } }),
   ]);
 
   if (!service) return null;
+
+  // Sort policies: Booking Policy first, Cancellation second, Refund third, others after
+  const POLICY_ORDER: Record<string, number> = {
+    BOOKING_POLICY: 0,
+    CANCELLATION_POLICY: 1,
+    REFUND_POLICY: 2,
+    APPOINTMENT_POLICY: 3,
+    TERMS_AND_CONDITIONS: 4,
+    PRIVACY_POLICY: 5,
+  };
+  const sortedPolicies = [...policies].sort(
+    (a, b) => (POLICY_ORDER[a.type as string] ?? 99) - (POLICY_ORDER[b.type as string] ?? 99),
+  );
 
   return {
     service: {
@@ -127,7 +140,7 @@ export async function getBookingPageData(
         questionType: q.questionType as string,
       })),
     },
-    policies: policies.map((p) => ({ ...p, type: p.type as string })),
+    policies: sortedPolicies.map((p) => ({ ...p, type: p.type as string })),
     timezone: businessSettings?.timezone ?? "Europe/London",
   };
 }
@@ -523,6 +536,48 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
       error: "Your booking could not be completed. Please try again.",
     };
   }
+
+  // Fire-and-forget: send booking received email after successful transaction
+  setImmediate(async () => {
+    try {
+      const [appt, business] = await Promise.all([
+        db.appointment.findFirst({
+          where: { tokens: { some: { tokenHash: createHash("sha256").update(rawToken).digest("hex") } } },
+          select: {
+            id: true,
+            serviceName: true,
+            startAt: true,
+            timezone: true,
+            pricePence: true,
+            depositPence: true,
+            customer: { select: { firstName: true, email: true } },
+          },
+        }),
+        db.businessSettings.findFirst({ select: { businessName: true } }),
+      ]);
+      if (!appt || !business) return;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      void sendNotification({
+        appointmentId: appt.id,
+        type: "BOOKING_CONFIRMATION",
+        recipientEmail: appt.customer.email,
+        deduplicationKey: `BOOKING_CONFIRMATION:${appt.id}`,
+        data: {
+          customerFirstName: appt.customer.firstName,
+          customerEmail: appt.customer.email,
+          serviceName: appt.serviceName,
+          startAt: appt.startAt,
+          timezone: appt.timezone,
+          pricePence: appt.pricePence,
+          depositPence: appt.depositPence,
+          businessName: business.businessName,
+          manageUrl: `${appUrl}/manage-booking/${rawToken}`,
+        },
+      });
+    } catch (err) {
+      console.error("[createBooking] booking confirmation email failed:", err);
+    }
+  });
 
   return { success: true, token: rawToken };
 }
