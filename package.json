@@ -68,6 +68,9 @@
     "jsdom": "^30.0.1",
     "vitest": "^4.1.10"
   },
+  "overrides": {
+    "brace-expansion": "^5.0.8"
+  },
   "allowScripts": {
     "prisma@7.9.1": true,
     "@prisma/engines@7.9.1": true,
