@@ -43,24 +43,28 @@ export default async function DashboardPage() {
             value="0"
             description="Appointments today"
             icon={CalendarDays}
+            accentColor="#3b82f6"
           />
           <StatCard
             label="Upcoming"
             value="0"
             description="Next 7 days"
             icon={Calendar}
+            accentColor="#22c55e"
           />
           <StatCard
             label="Today's Revenue"
             value="£0"
             description="Available once payments are set up"
             icon={CreditCard}
+            accentColor="#8b5cf6"
           />
           <StatCard
             label="Outstanding"
             value="£0"
             description="Unpaid balance"
             icon={AlertCircle}
+            accentColor="#f59e0b"
           />
         </div>
       </section>

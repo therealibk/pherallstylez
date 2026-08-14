@@ -40,9 +40,9 @@ export function PublicNav({ businessName, logoUrl }: Props) {
 
   const logo = logoUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={logoUrl} alt={businessName} className="h-7 w-auto object-contain" />
+    <img src={logoUrl} alt={businessName} className="h-7 w-auto object-contain brightness-0 invert" />
   ) : (
-    <span className="font-semibold tracking-tight text-base" style={{ color: "var(--foreground)" }}>
+    <span className="font-semibold tracking-tight text-base" style={{ color: "var(--background)" }}>
       {businessName}
     </span>
   );
@@ -57,24 +57,25 @@ export function PublicNav({ businessName, logoUrl }: Props) {
             aria-label="Navigation menu"
           >
             <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={close}
               aria-hidden="true"
             />
             <div
               className="relative ml-auto w-72 max-w-[85vw] h-full flex flex-col overflow-y-auto shadow-2xl"
-              style={{ background: "var(--background)" }}
+              style={{ background: "var(--foreground)" }}
             >
               <div
                 className="flex items-center justify-between px-6 py-5 border-b shrink-0"
-                style={{ borderColor: "var(--border,#e5e7eb)" }}
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
               >
                 <Link href="/" className="shrink-0" onClick={close}>
                   {logo}
                 </Link>
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-black/5"
+                  className="flex h-9 w-9 items-center justify-center rounded-md transition-colors"
+                  style={{ color: "rgba(255,255,255,0.60)" }}
                   aria-label="Close menu"
                   onClick={close}
                 >
@@ -83,30 +84,32 @@ export function PublicNav({ businessName, logoUrl }: Props) {
               </div>
 
               <nav className="flex-1 px-4 py-6 space-y-1" aria-label="Mobile navigation">
-                {NAV_LINKS.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                      pathname === href
-                        ? "bg-black/5 font-semibold"
-                        : "hover:bg-black/5",
-                    )}
-                    style={{ color: "var(--foreground)" }}
-                    aria-current={pathname === href ? "page" : undefined}
-                    onClick={close}
-                  >
-                    {label}
-                  </Link>
-                ))}
+                {NAV_LINKS.map(({ href, label }) => {
+                  const active = pathname === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        background: active ? "rgba(255,255,255,0.12)" : "transparent",
+                        color: active ? "var(--background)" : "rgba(255,255,255,0.70)",
+                        fontWeight: active ? 600 : 400,
+                      }}
+                      aria-current={active ? "page" : undefined}
+                      onClick={close}
+                    >
+                      {label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <div className="px-4 pb-8 shrink-0">
                 <Link
                   href="/book"
                   className="flex items-center justify-center w-full rounded-full py-3 text-sm font-semibold transition-opacity hover:opacity-85"
-                  style={{ background: "var(--button,#1a1a1a)", color: "var(--button-foreground,#fff)" }}
+                  style={{ background: "var(--background)", color: "var(--foreground)" }}
                   onClick={close}
                 >
                   Book Now
@@ -123,13 +126,10 @@ export function PublicNav({ businessName, logoUrl }: Props) {
       <header
         className={cn(
           "sticky top-0 z-40 transition-shadow",
-          scrolled ? "shadow-sm" : "",
+          scrolled ? "shadow-md shadow-black/20" : "",
         )}
-        style={{ background: "var(--background)" }}
+        style={{ background: "var(--foreground)" }}
       >
-        {/* Thin accent line at top */}
-        <div className="h-px w-full" style={{ background: "var(--primary,#2d2d2d)", opacity: 0.12 }} />
-
         <nav
           className="mx-auto max-w-6xl px-6 py-0 flex items-center h-16 justify-between"
           aria-label="Main navigation"
@@ -150,19 +150,17 @@ export function PublicNav({ businessName, logoUrl }: Props) {
                 <li key={href}>
                   <Link
                     href={href}
-                    className={cn(
-                      "relative px-3 py-2 text-sm font-medium rounded-md transition-colors block",
-                      active
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-black/4",
-                    )}
+                    className="relative px-3 py-2 text-sm font-medium rounded-md transition-colors block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/50"
+                    style={{
+                      color: active ? "var(--background)" : "rgba(255,255,255,0.60)",
+                    }}
                     aria-current={active ? "page" : undefined}
                   >
                     {label}
                     {active && (
                       <span
                         className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full"
-                        style={{ background: "var(--primary,#2d2d2d)" }}
+                        style={{ background: "var(--background)", opacity: 0.6 }}
                         aria-hidden="true"
                       />
                     )}
@@ -177,7 +175,7 @@ export function PublicNav({ businessName, logoUrl }: Props) {
             <Link
               href="/book"
               className="rounded-full px-5 py-2 text-sm font-semibold transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2"
-              style={{ background: "var(--button,#1a1a1a)", color: "var(--button-foreground,#fff)" }}
+              style={{ background: "var(--background)", color: "var(--foreground)" }}
             >
               Book Now
             </Link>
@@ -186,7 +184,8 @@ export function PublicNav({ businessName, logoUrl }: Props) {
           {/* Mobile hamburger */}
           <button
             type="button"
-            className="md:hidden flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            style={{ color: "rgba(255,255,255,0.70)" }}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
             aria-haspopup="dialog"
