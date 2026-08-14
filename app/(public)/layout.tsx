@@ -1,6 +1,8 @@
 import type React from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
 import {
   parseAppearanceData,
   FONT_VAR_NAMES,
