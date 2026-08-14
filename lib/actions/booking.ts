@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createHash, randomBytes } from "crypto";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   isSlotAvailable,
   wallClockToUtc,
@@ -197,6 +199,14 @@ class BookingTransactionError extends Error {
 }
 
 export async function createBooking(input: unknown): Promise<BookingResult> {
+  // Rate limit by IP — prevents spam submissions
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? "unknown";
+  const rateCheck = checkRateLimit(`booking:${ip}`);
+  if (!rateCheck.allowed) {
+    return { success: false, error: "Too many requests. Please try again later." };
+  }
+
   // 1. Parse and validate input structure
   const parsed = bookingRequestSchema.safeParse(input);
   if (!parsed.success) {

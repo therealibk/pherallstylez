@@ -63,6 +63,9 @@ export async function listAppointments(filter: AppointmentListFilter = {}): Prom
   page: number;
   pages: number;
 }> {
+  const guard = await requireAdmin();
+  if (guard !== true) return { appointments: [], total: 0, page: 1, pages: 0 };
+
   const page = Math.max(1, filter.page ?? 1);
   const pageSize = 20;
   const skip = (page - 1) * pageSize;
@@ -130,6 +133,9 @@ export async function listAppointments(filter: AppointmentListFilter = {}): Prom
 // ── Get appointment detail ────────────────────────────────────────────────────
 
 export async function getAppointmentDetail(id: string) {
+  const guard = await requireAdmin();
+  if (guard !== true) return null;
+
   return db.appointment.findUnique({
     where: { id },
     select: {
@@ -526,6 +532,9 @@ export async function rescheduleAppointment(
 // ── Dashboard stats ───────────────────────────────────────────────────────────
 
 export async function getDashboardStats() {
+  const guard = await requireAdmin();
+  if (guard !== true) return null;
+
   const now = new Date();
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);

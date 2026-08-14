@@ -6,11 +6,13 @@ export const maxDuration = 60;
 
 export async function GET(request: Request): Promise<NextResponse> {
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
-    }
+  if (!secret) {
+    console.error("[cron/send-reminders] CRON_SECRET is not configured — refusing to run without authentication");
+    return NextResponse.json({ error: "Cron not configured" }, { status: 500 });
+  }
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
   try {

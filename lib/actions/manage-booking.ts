@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createHash } from "crypto";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { sendNotification } from "@/lib/email";
 import { isSlotAvailable, wallClockToUtc } from "@/lib/availability";
 import {
@@ -106,6 +108,12 @@ export async function cancelByToken(
   rawToken: string,
   reason?: string,
 ): Promise<{ success: true } | FailResult> {
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? "unknown";
+  if (!checkRateLimit(`manage:${ip}`).allowed) {
+    return { success: false, error: "Too many requests. Please try again later." };
+  }
+
   const parsed = cancelSchema.safeParse({ reason });
   if (!parsed.success) return { success: false, error: "Invalid input" };
 
@@ -186,6 +194,12 @@ export async function rescheduleByToken(
   newDateStr: string,
   newTimeStr: string,
 ): Promise<{ success: true } | FailResult> {
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? "unknown";
+  if (!checkRateLimit(`manage:${ip}`).allowed) {
+    return { success: false, error: "Too many requests. Please try again later." };
+  }
+
   const parsed = rescheduleSchema.safeParse({ newDateStr, newTimeStr });
   if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 

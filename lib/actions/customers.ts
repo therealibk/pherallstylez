@@ -1,6 +1,12 @@
 "use server";
 
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+async function requireAdmin(): Promise<boolean> {
+  const session = await auth();
+  return !!session;
+}
 
 const PAGE_SIZE = 20;
 
@@ -21,6 +27,8 @@ export async function listCustomers(
   page: number;
   pages: number;
 }> {
+  if (!(await requireAdmin())) return { customers: [], total: 0, page, pages: 0 };
+
   const skip = (Math.max(1, page) - 1) * PAGE_SIZE;
 
   type WhereInput = {
@@ -66,6 +74,8 @@ export async function listCustomers(
 }
 
 export async function getCustomerById(id: string) {
+  if (!(await requireAdmin())) return null;
+
   return db.customer.findUnique({
     where: { id },
     select: {

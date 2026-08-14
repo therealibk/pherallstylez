@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -33,6 +34,8 @@ export default async function DashboardPage() {
     getDashboardStats(),
     db.businessSettings.findFirst({ select: { currency: true } }),
   ]);
+
+  if (!stats) redirect("/admin/login");
 
   const name = session?.user?.name ?? session?.user?.email ?? "Admin";
   const firstName = name.split(/\s+/)[0];

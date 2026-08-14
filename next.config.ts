@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
+// Next.js App Router requires 'unsafe-inline' for its hydration scripts and Tailwind inline styles.
+// The high-value directives below (frame-ancestors, base-uri, form-action, object-src) provide
+// meaningful protection regardless. Upgrade to nonce-based CSP if stricter script-src is needed.
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
