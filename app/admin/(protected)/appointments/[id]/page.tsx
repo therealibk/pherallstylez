@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/lib/actions/appointments";
+import { formatDuration } from "@/lib/service-format-utils";
 import { AppointmentStatusBadge } from "@/components/admin/appointment-status-badge";
 import { PaymentStatusBadge } from "@/components/admin/payment-status-badge";
 import { AppointmentTimeline } from "@/components/admin/appointment-timeline";
@@ -84,8 +85,8 @@ export default async function AppointmentDetailPage({ params }: Props) {
             <dl className="divide-y divide-border">
               <Row label="Service" value={appt.serviceName} />
               <Row label="Date & time" value={formatDateTime(appt.startAt, appt.timezone)} />
-              <Row label="Duration" value={`${appt.durationMins} min`} />
-              {appt.bufferMins > 0 && <Row label="Buffer" value={`${appt.bufferMins} min`} />}
+              <Row label="Duration" value={formatDuration(appt.durationMins)} />
+              {appt.bufferMins > 0 && <Row label="Buffer" value={formatDuration(appt.bufferMins)} />}
               <Row label="Price" value={formatCurrency(appt.pricePence)} />
               {appt.depositPence > 0 && <Row label="Deposit" value={formatCurrency(appt.depositPence)} />}
               {balance > 0 && balance < appt.pricePence && <Row label="Balance due" value={formatCurrency(balance)} />}

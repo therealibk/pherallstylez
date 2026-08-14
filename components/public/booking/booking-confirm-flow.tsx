@@ -25,6 +25,7 @@ import {
   formatDuration,
   DEPOSIT_TYPE,
 } from "@/lib/service-format-utils";
+import { RichTextContent } from "@/components/public/rich-text-content";
 
 type Step = "details" | "questions" | "policies" | "review";
 
@@ -570,12 +571,10 @@ function PoliciesStep({
 
             {isOpen && (
               <div
-                className="px-4 pb-4 pt-2 border-t max-h-64 overflow-y-auto"
+                className="px-4 pb-4 pt-2 border-t max-h-64 overflow-y-auto text-xs text-muted-foreground [&_p]:mb-2 [&_p]:leading-relaxed [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-1 [&_li]:leading-relaxed [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1"
                 style={{ borderColor: "var(--border,#e5e7eb)" }}
               >
-                <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground">
-                  {policy.content}
-                </pre>
+                <RichTextContent content={policy.content} />
               </div>
             )}
           </div>
