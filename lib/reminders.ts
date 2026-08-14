@@ -1,6 +1,50 @@
 import { db } from "@/lib/db";
 import { sendNotification } from "@/lib/email";
-import { AppointmentEventType } from "@/lib/generated/prisma/client";
+import { AppointmentStatus, AppointmentEventType } from "@/lib/generated/prisma/client";
+
+/**
+ * Mark PENDING appointments whose payment hold has expired as CANCELLED.
+ * The availability engine already ignores them (holdExpiresAt < now), but this
+ * cleans up the admin view and keeps appointment history accurate.
+ * Does NOT send emails — these were never confirmed bookings.
+ * Safe to call multiple times (idempotent: only targets PENDING rows).
+ */
+export async function cleanupExpiredHolds(): Promise<{ cleaned: number }> {
+  const now = new Date();
+
+  const expired = await db.appointment.findMany({
+    where: {
+      status: AppointmentStatus.PENDING,
+      holdExpiresAt: { lt: now, not: null },
+    },
+    select: { id: true },
+  });
+
+  if (expired.length === 0) return { cleaned: 0 };
+
+  let cleaned = 0;
+  for (const appt of expired) {
+    try {
+      await db.appointment.update({
+        where: { id: appt.id, status: AppointmentStatus.PENDING },
+        data: {
+          status: AppointmentStatus.CANCELLED,
+          events: {
+            create: {
+              eventType: AppointmentEventType.CANCELLED,
+              description: "Payment hold expired — booking was not completed",
+            },
+          },
+        },
+      });
+      cleaned++;
+    } catch {
+      // Already updated by a concurrent run — skip silently
+    }
+  }
+
+  return { cleaned };
+}
 
 /**
  * Check all upcoming CONFIRMED appointments and send reminders where due.

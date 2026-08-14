@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkAndSendReminders } from "@/lib/reminders";
+import { checkAndSendReminders, cleanupExpiredHolds } from "@/lib/reminders";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,8 +16,11 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const result = await checkAndSendReminders();
-    return NextResponse.json({ ok: true, ...result });
+    const [reminderResult, holdResult] = await Promise.all([
+      checkAndSendReminders(),
+      cleanupExpiredHolds(),
+    ]);
+    return NextResponse.json({ ok: true, ...reminderResult, holdsExpired: holdResult.cleaned });
   } catch (err) {
     console.error("[cron/send-reminders] error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

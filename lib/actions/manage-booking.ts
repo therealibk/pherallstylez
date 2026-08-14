@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendNotification } from "@/lib/email";
-import { isSlotAvailable, wallClockToUtc } from "@/lib/availability";
+import { isSlotAvailable, wallClockToUtc, expandBlockedPeriods } from "@/lib/availability";
 import {
   AppointmentStatus,
   AppointmentEventType,
@@ -238,9 +238,17 @@ export async function rescheduleByToken(
 
   const timezone = businessSettings?.timezone ?? "Europe/London";
 
+  const minNoticeHours = settings.minNoticeHours ?? 24;
+  const maxAdvanceDays = settings.maxAdvanceDays ?? 90;
+  const now = new Date();
+  const fromDate = new Date(now.getTime() + minNoticeHours * 3_600_000);
+  const toDate = new Date(now.getTime() + maxAdvanceDays * 86_400_000);
+
   const [rules, blockedPeriods, existingAppointments] = await Promise.all([
     db.availabilityRule.findMany({ where: { active: true } }),
-    db.blockedPeriod.findMany(),
+    db.blockedPeriod.findMany({
+      select: { startAt: true, endAt: true, allDay: true, recurrence: true, recurrenceEndDate: true },
+    }),
     db.appointment.findMany({
       where: {
         id: { not: appointment.id },
@@ -250,12 +258,15 @@ export async function rescheduleByToken(
     }),
   ]);
 
+  // Expand recurring blocked periods into concrete occurrences within the booking window
+  const expandedBlockedPeriods = expandBlockedPeriods(blockedPeriods, fromDate, toDate);
+
   const slotAvailable = isSlotAvailable({
     dateStr: parsed.data.newDateStr,
     timeStr: parsed.data.newTimeStr,
     service: { durationMins: appointment.durationMins, bufferMins: appointment.bufferMins },
     rules: rules.map((r) => ({ dayOfWeek: r.dayOfWeek, startTime: r.startTime, endTime: r.endTime, active: r.active })),
-    blockedPeriods: blockedPeriods.map((bp) => ({ startAt: bp.startAt, endAt: bp.endAt, allDay: bp.allDay })),
+    blockedPeriods: expandedBlockedPeriods,
     appointments: existingAppointments.map((a) => ({
       startAt: a.startAt,
       endAt: a.endAt,
@@ -264,11 +275,11 @@ export async function rescheduleByToken(
       holdExpiresAt: a.holdExpiresAt,
     })),
     settings: {
-      minNoticeHours: settings.minNoticeHours ?? 24,
-      maxAdvanceDays: settings.maxAdvanceDays ?? 90,
+      minNoticeHours,
+      maxAdvanceDays,
       timezone,
     },
-    now: new Date(),
+    now,
   });
 
   if (!slotAvailable) {
