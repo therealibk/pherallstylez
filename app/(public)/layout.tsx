@@ -47,9 +47,18 @@ export default async function PublicLayout({
       className="flex flex-col min-h-full"
       style={cssVars as React.CSSProperties}
     >
+      {/* Skip to main content — WCAG 2.4.1 */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-md focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg"
+        style={{ background: "var(--foreground)", color: "var(--background)" }}
+      >
+        Skip to main content
+      </a>
+
       <PublicNav businessName={businessName} logoUrl={logoUrl} />
 
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
 
       <footer
         className="mt-auto border-t"

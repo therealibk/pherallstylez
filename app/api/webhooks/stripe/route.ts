@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, resolveWebhookSecret } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { sendNotification } from "@/lib/email";
 
@@ -21,9 +21,9 @@ async function getBusinessName(): Promise<string> {
  * A committed StripeWebhookEvent row always means the event was processed.
  */
 export async function POST(request: Request): Promise<NextResponse> {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = await resolveWebhookSecret();
   if (!webhookSecret) {
-    console.error("[webhook/stripe] STRIPE_WEBHOOK_SECRET not set");
+    console.error("[webhook/stripe] Webhook secret not configured (set in Admin → Settings → Payments or STRIPE_WEBHOOK_SECRET env var)");
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
@@ -33,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const rawBody = await request.text();
-  const stripe = getStripe();
+  const stripe = await getStripe();
 
   let event: Stripe.Event;
   try {

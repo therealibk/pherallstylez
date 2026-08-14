@@ -10,7 +10,12 @@ import { Clock, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Pherall — Professional Hair Styling",
-  description: "Book your hair appointment online.",
+  description: "Professional hair styling and beauty services. Book your appointment online in minutes.",
+  openGraph: {
+    title: "Pherall — Professional Hair Styling",
+    description: "Professional hair styling and beauty services. Book your appointment online in minutes.",
+    type: "website",
+  },
 };
 
 export default async function HomePage() {
@@ -38,8 +43,37 @@ export default async function HomePage() {
     .filter((t) => t.published)
     .sort((a, b) => a.displayOrder - b.displayOrder);
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "HairSalon",
+    name: "Pherall",
+    url: appUrl,
+    description: "Professional hair styling and beauty services. Book your appointment online.",
+    ...(hero.imageUrl ? { image: hero.imageUrl } : {}),
+    potentialAction: {
+      "@type": "ReserveAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${appUrl}/book`,
+        actionPlatform: [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform",
+        ],
+      },
+      result: {
+        "@type": "Reservation",
+        name: "Hair appointment",
+      },
+    },
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="relative">
         {hero.imageUrl ? (

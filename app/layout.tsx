@@ -43,9 +43,28 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Pherall",
-  description: "Professional hair styling and booking",
+  metadataBase: new URL(appUrl),
+  title: "Pherall — Professional Hair Styling",
+  description: "Professional hair styling and beauty services. Book your appointment online.",
+  openGraph: {
+    type: "website",
+    siteName: "Pherall",
+    title: "Pherall — Professional Hair Styling",
+    description: "Professional hair styling and beauty services. Book your appointment online.",
+    url: appUrl,
+  },
+  twitter: {
+    card: "summary",
+    title: "Pherall — Professional Hair Styling",
+    description: "Professional hair styling and beauty services. Book your appointment online.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

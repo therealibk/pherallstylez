@@ -10,7 +10,10 @@ export const proxy = auth((req: NextAuthRequest) => {
 
   if (!isLoginPage && !isAuthenticated) {
     const loginUrl = new URL("/admin/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    // Only allow relative paths — prevents open redirect via crafted callbackUrl
+    if (pathname.startsWith("/admin/") && !pathname.includes("//")) {
+      loginUrl.searchParams.set("callbackUrl", pathname);
+    }
     return NextResponse.redirect(loginUrl);
   }
 

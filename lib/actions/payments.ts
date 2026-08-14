@@ -78,7 +78,7 @@ export async function createCheckoutSession(
   });
   const currency = (businessSettings?.currency ?? "GBP").toLowerCase();
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
 
   // Create Payment record first (PENDING) with idempotency key
   const idempotencyKey = `checkout:${appt.id}:${paymentType}`;
@@ -249,7 +249,7 @@ export async function issueRefund(
     };
   }
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
 
   try {
     // Look up the charge ID from the payment intent

@@ -7,7 +7,11 @@ import { Clock, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Services — Pherall",
-  description: "Browse all available hair styling services and book online.",
+  description: "Browse all available hair styling services and book your appointment online.",
+  openGraph: {
+    title: "Services — Pherall",
+    description: "Browse all available hair styling services and book your appointment online.",
+  },
 };
 
 export default async function ServicesPage() {

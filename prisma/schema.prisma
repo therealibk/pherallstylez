@@ -128,8 +128,12 @@ model BusinessSettings {
   currency       String   @default("GBP")
   timezone       String   @default("Europe/London")
   // Appearance settings: colours (7 hex vars), font key, faviconUrl
-  appearanceData Json?
-  updatedAt      DateTime @updatedAt
+  appearanceData       Json?
+  // Stripe keys — stored in DB so admin can configure via UI (fallback: env vars)
+  stripeSecretKey      String?
+  stripePublishableKey String?
+  stripeWebhookSecret  String?
+  updatedAt            DateTime @updatedAt
 }
 
 // Single-row booking rules configuration — always upserted, never multi-row

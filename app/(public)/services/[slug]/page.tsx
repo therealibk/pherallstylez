@@ -18,12 +18,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     where: { slug, active: true },
     select: { name: true, description: true },
   });
-  if (!service) return { title: "Service not found" };
+  if (!service) return { title: "Service not found — Pherall" };
+  const description = service.description
+    ? plainTextFromRichText(service.description).slice(0, 160) || undefined
+    : undefined;
   return {
     title: `${service.name} — Pherall`,
-    description: service.description
-      ? plainTextFromRichText(service.description).slice(0, 160) || undefined
-      : undefined,
+    description,
+    openGraph: {
+      title: `${service.name} — Pherall`,
+      description,
+      type: "website",
+    },
   };
 }
 

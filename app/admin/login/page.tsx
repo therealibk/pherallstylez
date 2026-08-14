@@ -2,7 +2,10 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Admin Login — Pherall" };
+export const metadata: Metadata = {
+  title: "Admin Login — Pherall",
+  robots: { index: false, follow: false },
+};
 
 export default function AdminLoginPage() {
   return (
