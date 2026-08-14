@@ -72,6 +72,8 @@ const blockedPeriodSchema = z.object({
   endAt: z.string().datetime({ message: "Invalid end date/time" }),
   allDay: z.boolean().default(false),
   reason: z.string().max(500).optional(),
+  recurrence: z.enum(["NONE", "WEEKLY", "MONTHLY"]).default("NONE"),
+  recurrenceEndDate: z.string().datetime().optional().nullable(),
 });
 
 export type BlockedPeriodInput = z.infer<typeof blockedPeriodSchema>;
@@ -100,6 +102,8 @@ export async function createBlockedPeriod(
       endAt: end,
       allDay: parsed.data.allDay,
       reason: parsed.data.reason?.trim() || null,
+      recurrence: parsed.data.recurrence,
+      recurrenceEndDate: parsed.data.recurrenceEndDate ? new Date(parsed.data.recurrenceEndDate) : null,
     },
   });
 
@@ -136,6 +140,8 @@ export async function updateBlockedPeriod(
       endAt: end,
       allDay: parsed.data.allDay,
       reason: parsed.data.reason?.trim() || null,
+      recurrence: parsed.data.recurrence,
+      recurrenceEndDate: parsed.data.recurrenceEndDate ? new Date(parsed.data.recurrenceEndDate) : null,
     },
   });
 
@@ -165,5 +171,9 @@ export async function getBlockedPeriods(opts?: {
       ? { startAt: { lte: opts.toDate }, endAt: { gte: opts.fromDate } }
       : undefined,
     orderBy: { startAt: "asc" },
+    select: {
+      id: true, startAt: true, endAt: true, allDay: true,
+      reason: true, recurrence: true, recurrenceEndDate: true, createdAt: true,
+    },
   });
 }

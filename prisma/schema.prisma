@@ -133,6 +133,9 @@ model BusinessSettings {
   stripeSecretKey      String?
   stripePublishableKey String?
   stripeWebhookSecret  String?
+  // Email delivery — stored in DB so admin can configure via UI (fallback: env vars)
+  resendApiKey         String?
+  emailFrom            String?
   updatedAt            DateTime @updatedAt
 }
 
@@ -287,12 +290,15 @@ model AvailabilityRule {
 // One-off blocked date/time ranges that override weekly availability
 model BlockedPeriod {
   id        String    @id @default(cuid())
-  // UTC timestamps
+  // UTC timestamps for the first occurrence
   startAt   DateTime
   endAt     DateTime
   // True when the entire day(s) are blocked regardless of specific times
   allDay    Boolean   @default(false)
   reason    String?
+  // Recurrence: NONE | WEEKLY | MONTHLY
+  recurrence        String    @default("NONE")
+  recurrenceEndDate DateTime?
   createdAt DateTime  @default(now())
 
   @@index([startAt, endAt])

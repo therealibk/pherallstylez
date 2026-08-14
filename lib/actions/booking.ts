@@ -6,6 +6,7 @@ import {
   isSlotAvailable,
   wallClockToUtc,
   utcToDateStr,
+  expandBlockedPeriods,
 } from "@/lib/availability";
 import { bookingRequestSchema } from "@/lib/booking-schemas";
 import {
@@ -284,7 +285,7 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
   const [rules, blockedPeriods, existingAppointments] = await Promise.all([
     db.availabilityRule.findMany({ where: { active: true } }),
     db.blockedPeriod.findMany({
-      where: { startAt: { lte: toDate }, endAt: { gte: fromDate } },
+      select: { startAt: true, endAt: true, allDay: true, recurrence: true, recurrenceEndDate: true },
     }),
     db.appointment.findMany({
       where: {
@@ -309,8 +310,8 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
       endTime: r.endTime,
       active: r.active,
     }));
-  const toMappedBlocked = (bps: typeof blockedPeriods) =>
-    bps.map((bp) => ({ startAt: bp.startAt, endAt: bp.endAt, allDay: bp.allDay }));
+  const toMappedBlocked = (bps: typeof blockedPeriods, from: Date, to: Date) =>
+    expandBlockedPeriods(bps, from, to);
   const toMappedAppts = (appts: typeof existingAppointments) =>
     appts.map((a) => ({
       startAt: a.startAt,
@@ -326,7 +327,7 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
     timeStr: req.timeStr,
     service: serviceInput,
     rules: toMappedRules(rules),
-    blockedPeriods: toMappedBlocked(blockedPeriods),
+    blockedPeriods: toMappedBlocked(blockedPeriods, fromDate, toDate),
     appointments: toMappedAppts(existingAppointments),
     settings: availabilitySettings,
     now,
@@ -367,7 +368,7 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
       const [rulesInTx, blockedInTx, apptsInTx] = await Promise.all([
         tx.availabilityRule.findMany({ where: { active: true } }),
         tx.blockedPeriod.findMany({
-          where: { startAt: { lte: toDate }, endAt: { gte: fromDate } },
+          select: { startAt: true, endAt: true, allDay: true, recurrence: true, recurrenceEndDate: true },
         }),
         tx.appointment.findMany({
           where: {
@@ -391,7 +392,7 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
           timeStr: req.timeStr,
           service: serviceInput,
           rules: toMappedRules(rulesInTx),
-          blockedPeriods: toMappedBlocked(blockedInTx),
+          blockedPeriods: toMappedBlocked(blockedInTx, fromDate, toDate),
           appointments: toMappedAppts(apptsInTx),
           settings: availabilitySettings,
           now: nowInTx,

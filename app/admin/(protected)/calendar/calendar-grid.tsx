@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { AppointmentStatus } from "@/lib/generated/prisma/client";
+import type { CalendarAppt } from "@/lib/actions/calendar";
 
 interface Appointment {
   id: string;
   status: AppointmentStatus;
-  startAt: Date;
+  startAt: Date | string;
   serviceName: string;
   customer: { firstName: string; lastName: string };
 }
@@ -15,7 +16,9 @@ interface Appointment {
 interface Props {
   year: number;
   month: number;
-  appointments: Appointment[];
+  appointments: (Appointment | CalendarAppt)[];
+  timezone?: string;
+  onAppointmentClick?: (id: string) => void;
 }
 
 const STATUS_DOT: Record<AppointmentStatus, string> = {
@@ -47,18 +50,21 @@ function nextMonth(year: number, month: number) {
   return { year, month: month + 1 };
 }
 
-export function CalendarGrid({ year, month, appointments }: Props) {
+export function CalendarGrid({ year, month, appointments, timezone, onAppointmentClick }: Props) {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const daysInMonth = lastDay.getDate();
   // JS getDay() is 0=Sunday; we want 0=Monday
   const startDow = (firstDay.getDay() + 6) % 7;
 
-  // Group appointments by day-of-month
-  const byDay: Record<number, Appointment[]> = {};
+  const tz = timezone ?? "Europe/London";
+
+  // Group appointments by day-of-month in business timezone
+  const byDay: Record<number, (Appointment | CalendarAppt)[]> = {};
   for (const appt of appointments) {
-    const d = new Date(appt.startAt).getDate();
-    (byDay[d] ??= []).push(appt);
+    const d = new Intl.DateTimeFormat("en-GB", { timeZone: tz, day: "numeric" })
+      .format(new Date(appt.startAt));
+    (byDay[parseInt(d)] ??= []).push(appt);
   }
 
   const today = new Date();
@@ -134,23 +140,42 @@ export function CalendarGrid({ year, month, appointments }: Props) {
 
               {/* Appointments */}
               <div className="mt-1 space-y-0.5">
-                {dayAppts.slice(0, 3).map((appt) => (
-                  <Link
-                    key={appt.id}
-                    href={`/admin/appointments/${appt.id}`}
-                    className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight hover:bg-muted/40 transition-colors truncate"
-                    aria-label={`${appt.customer.firstName} ${appt.customer.lastName} — ${appt.serviceName}`}
-                  >
-                    <span
-                      className="shrink-0 h-1.5 w-1.5 rounded-full"
-                      style={{ background: STATUS_DOT[appt.status] ?? "#999" }}
-                      aria-hidden="true"
-                    />
-                    <span className="truncate text-foreground/80">
-                      {formatTime(appt.startAt)} {appt.customer.firstName}
-                    </span>
-                  </Link>
-                ))}
+                {dayAppts.slice(0, 3).map((appt) => {
+                  const label = `${appt.customer.firstName} ${appt.customer.lastName} — ${appt.serviceName}`;
+                  const timeLabel = formatTime(new Date(appt.startAt));
+                  const inner = (
+                    <>
+                      <span
+                        className="shrink-0 h-1.5 w-1.5 rounded-full"
+                        style={{ background: STATUS_DOT[appt.status] ?? "#999" }}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate text-foreground/80">
+                        {timeLabel} {appt.customer.firstName}
+                      </span>
+                    </>
+                  );
+                  return onAppointmentClick ? (
+                    <button
+                      key={appt.id}
+                      type="button"
+                      onClick={() => onAppointmentClick(appt.id)}
+                      className="w-full flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight hover:bg-muted/40 transition-colors truncate text-left"
+                      aria-label={label}
+                    >
+                      {inner}
+                    </button>
+                  ) : (
+                    <Link
+                      key={appt.id}
+                      href={`/admin/appointments/${appt.id}`}
+                      className="flex items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight hover:bg-muted/40 transition-colors truncate"
+                      aria-label={label}
+                    >
+                      {inner}
+                    </Link>
+                  );
+                })}
                 {dayAppts.length > 3 && (
                   <Link
                     href={`/admin/appointments?date=${dateStr}`}

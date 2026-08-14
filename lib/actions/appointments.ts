@@ -8,6 +8,7 @@ import { sendNotification } from "@/lib/email";
 import {
   isSlotAvailable,
   wallClockToUtc,
+  expandBlockedPeriods,
 } from "@/lib/availability";
 import {
   AppointmentStatus,
@@ -432,9 +433,9 @@ export async function rescheduleAppointment(
     return { success: false, error: `Cannot reschedule a ${appt.status.toLowerCase()} appointment` };
   }
 
-  const [rules, blockedPeriods, existingAppointments, businessSettings, bookingSettings] = await Promise.all([
+  const [rules, rawBlocked, existingAppointments, businessSettings, bookingSettings] = await Promise.all([
     db.availabilityRule.findMany({ where: { active: true } }),
-    db.blockedPeriod.findMany(),
+    db.blockedPeriod.findMany({ select: { startAt: true, endAt: true, allDay: true, recurrence: true, recurrenceEndDate: true } }),
     db.appointment.findMany({
       where: {
         id: { not: id },
@@ -450,12 +451,16 @@ export async function rescheduleAppointment(
   const minNoticeHours = bookingSettings?.minNoticeHours ?? 0;
   const maxAdvanceDays = bookingSettings?.maxAdvanceDays ?? 365;
 
+  // Expand recurring blocked periods for the reschedule window
+  const rescheduleWindow = new Date(parsed.data.newDateStr + "T23:59:59Z");
+  const blockedPeriods = expandBlockedPeriods(rawBlocked, new Date(), rescheduleWindow);
+
   const slotAvailable = isSlotAvailable({
     dateStr: parsed.data.newDateStr,
     timeStr: parsed.data.newTimeStr,
     service: { durationMins: appt.durationMins, bufferMins: appt.bufferMins },
     rules: rules.map((r) => ({ dayOfWeek: r.dayOfWeek, startTime: r.startTime, endTime: r.endTime, active: r.active })),
-    blockedPeriods: blockedPeriods.map((bp) => ({ startAt: bp.startAt, endAt: bp.endAt, allDay: bp.allDay })),
+    blockedPeriods,
     appointments: existingAppointments.map((a) => ({
       startAt: a.startAt,
       endAt: a.endAt,

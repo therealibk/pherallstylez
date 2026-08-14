@@ -28,6 +28,57 @@ export interface BlockedPeriodInput {
   allDay: boolean;
 }
 
+export interface StoredBlockedPeriod extends BlockedPeriodInput {
+  recurrence: string;          // "NONE" | "WEEKLY" | "MONTHLY"
+  recurrenceEndDate: Date | null;
+}
+
+/**
+ * Expand stored blocked periods (which may have recurrence rules) into a flat
+ * list of concrete BlockedPeriodInput instances within [fromDate, toDate].
+ */
+export function expandBlockedPeriods(
+  periods: StoredBlockedPeriod[],
+  fromDate: Date,
+  toDate: Date,
+): BlockedPeriodInput[] {
+  const results: BlockedPeriodInput[] = [];
+
+  for (const p of periods) {
+    const durationMs = p.endAt.getTime() - p.startAt.getTime();
+    const cutoff = p.recurrenceEndDate ?? toDate;
+
+    if (p.recurrence === "WEEKLY") {
+      let cursor = new Date(p.startAt);
+      while (cursor <= cutoff && cursor <= toDate) {
+        const occEnd = new Date(cursor.getTime() + durationMs);
+        if (occEnd >= fromDate) {
+          results.push({ startAt: new Date(cursor), endAt: occEnd, allDay: p.allDay });
+        }
+        cursor = new Date(cursor.getTime() + 7 * 24 * 60 * 60 * 1000);
+      }
+    } else if (p.recurrence === "MONTHLY") {
+      let cursor = new Date(p.startAt);
+      while (cursor <= cutoff && cursor <= toDate) {
+        const occEnd = new Date(cursor.getTime() + durationMs);
+        if (occEnd >= fromDate) {
+          results.push({ startAt: new Date(cursor), endAt: occEnd, allDay: p.allDay });
+        }
+        const next = new Date(cursor);
+        next.setMonth(next.getMonth() + 1);
+        cursor = next;
+      }
+    } else {
+      // NONE — one-time block; include if it overlaps the range
+      if (p.startAt <= toDate && p.endAt >= fromDate) {
+        results.push({ startAt: p.startAt, endAt: p.endAt, allDay: p.allDay });
+      }
+    }
+  }
+
+  return results;
+}
+
 export interface AppointmentInput {
   startAt: Date;
   endAt: Date;      // startAt + durationMins (buffer NOT included)

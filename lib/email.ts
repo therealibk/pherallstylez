@@ -3,12 +3,15 @@ import { db } from "@/lib/db";
 import { buildEmailTemplate, type AppointmentEmailData } from "@/lib/email-templates";
 import type { NotificationType } from "@/lib/generated/prisma/client";
 
-let _resend: Resend | null = null;
-
-function getResend(): Resend | null {
-  if (!process.env.RESEND_API_KEY) return null;
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
-  return _resend;
+/** Resolve email config: DB row takes precedence over env vars. */
+async function getEmailConfig(): Promise<{ apiKey: string | null; from: string }> {
+  const settings = await db.businessSettings.findFirst({
+    select: { resendApiKey: true, emailFrom: true },
+  });
+  const apiKey = settings?.resendApiKey || process.env.RESEND_API_KEY || null;
+  const from =
+    settings?.emailFrom || process.env.EMAIL_FROM || "noreply@example.com";
+  return { apiKey, from };
 }
 
 export interface SendNotificationInput {
@@ -25,7 +28,7 @@ export interface SendNotificationInput {
  *
  * Idempotent: the unique deduplicationKey prevents duplicate sends.
  * Fire-and-forget safe: errors are logged but never thrown.
- * Graceful no-op: if RESEND_API_KEY is not set, skips send but still logs.
+ * Graceful no-op: if no API key is configured, skips send but still logs.
  */
 export async function sendNotification(input: SendNotificationInput): Promise<void> {
   const { appointmentId, type, recipientEmail, deduplicationKey, data, reminderOffsetHours } = input;
@@ -51,12 +54,11 @@ export async function sendNotification(input: SendNotificationInput): Promise<vo
     return;
   }
 
-  const resend = getResend();
-  const from = process.env.EMAIL_FROM ?? "noreply@example.com";
+  const { apiKey, from } = await getEmailConfig();
   const { subject, html } = buildEmailTemplate(type, data);
 
-  if (!resend) {
-    console.log(`[email] RESEND_API_KEY not set — skipping send for ${deduplicationKey}`);
+  if (!apiKey) {
+    console.log(`[email] No API key configured — skipping send for ${deduplicationKey}`);
     await db.notificationLog.update({
       where: { id: logId },
       data: { status: "FAILED", error: "RESEND_API_KEY not configured" },
@@ -65,6 +67,7 @@ export async function sendNotification(input: SendNotificationInput): Promise<vo
   }
 
   try {
+    const resend = new Resend(apiKey);
     const result = await resend.emails.send({ from, to: recipientEmail, subject, html });
     await db.notificationLog.update({
       where: { id: logId },

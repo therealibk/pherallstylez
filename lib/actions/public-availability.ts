@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import {
   getSlotsForDate,
   getAvailableDatesInRange,
+  expandBlockedPeriods,
   utcToDateStr,
 } from "@/lib/availability";
 
@@ -38,11 +39,11 @@ async function loadAvailabilityData(serviceSlug: string) {
   const fromDate = new Date(now.getTime() + minNoticeHours * 3_600_000);
   const toDate = new Date(now.getTime() + maxAdvanceDays * 86_400_000);
 
-  // Load blocked periods that could affect this window
-  const blockedPeriods = await db.blockedPeriod.findMany({
-    where: { startAt: { lte: toDate }, endAt: { gte: fromDate } },
-    select: { startAt: true, endAt: true, allDay: true },
+  // Load blocked periods that could affect this window (includes recurring)
+  const rawBlocked = await db.blockedPeriod.findMany({
+    select: { startAt: true, endAt: true, allDay: true, recurrence: true, recurrenceEndDate: true },
   });
+  const blockedPeriods = expandBlockedPeriods(rawBlocked, fromDate, toDate);
 
   // Load active/pending appointments in window (exclude expired holds and cancelled/rescheduled)
   const appointments = await db.appointment.findMany({

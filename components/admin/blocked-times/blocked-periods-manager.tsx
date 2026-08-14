@@ -18,6 +18,8 @@ interface BlockedPeriod {
   endAt: Date;
   allDay: boolean;
   reason: string | null;
+  recurrence: string;
+  recurrenceEndDate: Date | null;
 }
 
 interface Props {
@@ -68,6 +70,8 @@ interface FormState {
   endTime: string;
   allDay: boolean;
   reason: string;
+  recurrence: "NONE" | "WEEKLY" | "MONTHLY";
+  recurrenceEndDate: string; // YYYY-MM-DD or ""
 }
 
 function defaultForm(tz: string): FormState {
@@ -80,6 +84,8 @@ function defaultForm(tz: string): FormState {
     endTime: "17:00",
     allDay: false,
     reason: "",
+    recurrence: "NONE",
+    recurrenceEndDate: "",
   };
 }
 
@@ -106,19 +112,25 @@ function formToPayload(form: FormState, tz: string) {
     return utc.toISOString();
   }
 
-  if (form.allDay) {
-    return {
-      startAt: toUtcIso(form.startDate, "00:00"),
-      endAt: toUtcIso(form.endDate, "24:00"),
-      allDay: true,
-      reason: form.reason,
-    };
-  }
+  const base = form.allDay
+    ? {
+        startAt: toUtcIso(form.startDate, "00:00"),
+        endAt: toUtcIso(form.endDate, "24:00"),
+        allDay: true,
+        reason: form.reason,
+      }
+    : {
+        startAt: toUtcIso(form.startDate, form.startTime),
+        endAt: toUtcIso(form.endDate, form.endTime),
+        allDay: false,
+        reason: form.reason,
+      };
   return {
-    startAt: toUtcIso(form.startDate, form.startTime),
-    endAt: toUtcIso(form.endDate, form.endTime),
-    allDay: false,
-    reason: form.reason,
+    ...base,
+    recurrence: form.recurrence,
+    recurrenceEndDate: form.recurrenceEndDate
+      ? toUtcIso(form.recurrenceEndDate, "23:59")
+      : null,
   };
 }
 
@@ -146,6 +158,8 @@ export function BlockedPeriodsManager({ initial, timezone }: Props) {
       endTime: dateToInputLocal(p.endAt, timezone).slice(11),
       allDay: p.allDay,
       reason: p.reason ?? "",
+      recurrence: (p.recurrence as "NONE" | "WEEKLY" | "MONTHLY") ?? "NONE",
+      recurrenceEndDate: p.recurrenceEndDate ? dateToDateInput(p.recurrenceEndDate, timezone) : "",
     });
     setEditingId(p.id);
     setShowForm(true);
@@ -206,12 +220,24 @@ export function BlockedPeriodsManager({ initial, timezone }: Props) {
           {periods.map((p) => (
             <div key={p.id} className="flex items-start gap-3 p-3 sm:p-4">
               <div className="flex-1 min-w-0 space-y-0.5">
-                <p className="text-sm font-medium">
-                  {p.allDay ? "All day" : `${formatDate(p.startAt, timezone)} – ${formatDate(p.endAt, timezone)}`}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium">
+                    {p.allDay ? "All day" : `${formatDate(p.startAt, timezone)} – ${formatDate(p.endAt, timezone)}`}
+                  </p>
+                  {p.recurrence !== "NONE" && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                      {p.recurrence === "WEEKLY" ? "Weekly" : "Monthly"}
+                    </span>
+                  )}
+                </div>
                 {p.allDay && (
                   <p className="text-xs text-muted-foreground">
                     {dateToDateInput(p.startAt, timezone)} – {dateToDateInput(p.endAt, timezone)}
+                  </p>
+                )}
+                {p.recurrence !== "NONE" && p.recurrenceEndDate && (
+                  <p className="text-xs text-muted-foreground">
+                    Until {dateToDateInput(p.recurrenceEndDate, timezone)}
                   </p>
                 )}
                 {p.reason && (
@@ -346,6 +372,34 @@ export function BlockedPeriodsManager({ initial, timezone }: Props) {
               maxLength={500}
             />
           </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="recurrence" className="text-sm">Recurrence</Label>
+            <select
+              id="recurrence"
+              value={form.recurrence}
+              onChange={(e) => setForm((f) => ({ ...f, recurrence: e.target.value as "NONE" | "WEEKLY" | "MONTHLY" }))}
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="NONE">One-time</option>
+              <option value="WEEKLY">Every week (same day)</option>
+              <option value="MONTHLY">Every month (same date)</option>
+            </select>
+          </div>
+
+          {form.recurrence !== "NONE" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="recurrenceEndDate" className="text-sm">Recurrence ends (optional)</Label>
+              <Input
+                id="recurrenceEndDate"
+                type="date"
+                value={form.recurrenceEndDate}
+                onChange={(e) => setForm((f) => ({ ...f, recurrenceEndDate: e.target.value }))}
+                className="h-9"
+              />
+              <p className="text-xs text-muted-foreground">Leave blank to repeat indefinitely.</p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Button type="button" size="sm" onClick={handleSubmit} disabled={isPending}>

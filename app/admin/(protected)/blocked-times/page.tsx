@@ -18,6 +18,8 @@ export default async function BlockedTimesPage() {
     endAt: p.endAt,
     allDay: p.allDay,
     reason: p.reason,
+    recurrence: p.recurrence,
+    recurrenceEndDate: p.recurrenceEndDate,
   }));
 
   return (
