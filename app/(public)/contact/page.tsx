@@ -5,8 +5,14 @@ import { parseContactData } from "@/lib/cms-schemas";
 import { RichTextContent } from "@/components/public/rich-text-content";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { getPageSeo } from "@/lib/actions/page-seo";
 
-export const metadata: Metadata = { title: "Contact — Pherall" };
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getPageSeo("contact");
+  const title = seo.title?.trim() || "Contact — Pherall";
+  const description = seo.description?.trim() || undefined;
+  return { title, ...(description ? { description } : {}) };
+}
 
 export default async function ContactPage() {
   const [record, settings] = await Promise.all([

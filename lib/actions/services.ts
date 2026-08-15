@@ -262,6 +262,17 @@ export async function validateServiceImage(
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
+async function generateCategorySlug(name: string, excludeId?: string): Promise<string> {
+  const base = slugify(name);
+  let slug = base;
+  let counter = 2;
+  while (true) {
+    const existing = await db.serviceCategory.findUnique({ where: { slug } });
+    if (!existing || existing.id === excludeId) return slug;
+    slug = `${base}-${counter++}`;
+  }
+}
+
 export async function createCategory(data: {
   name: string;
   description?: string;
@@ -276,11 +287,13 @@ export async function createCategory(data: {
 
   const maxOrder = await db.serviceCategory.aggregate({ _max: { displayOrder: true } });
   const displayOrder = (maxOrder._max.displayOrder ?? -1) + 1;
+  const slug = await generateCategorySlug(name);
 
   try {
     await db.serviceCategory.create({
       data: {
         name,
+        slug,
         description: data.description?.trim() || null,
         active: data.active,
         displayOrder,
@@ -296,6 +309,7 @@ export async function createCategory(data: {
   revalidatePath("/admin/services/categories");
   revalidatePath("/admin/services/new");
   revalidatePath("/services");
+  revalidatePath("/book");
   return { success: true };
 }
 
@@ -314,11 +328,18 @@ export async function updateCategory(
   const name = data.name.trim();
   if (!name) return { success: false, error: "Category name is required" };
 
+  const existing = await db.serviceCategory.findUnique({ where: { id }, select: { name: true, slug: true } });
+  const newSlug =
+    existing && slugify(existing.name) === slugify(name) && existing.slug
+      ? existing.slug
+      : await generateCategorySlug(name, id);
+
   try {
     await db.serviceCategory.update({
       where: { id },
       data: {
         name,
+        slug: newSlug,
         description: data.description?.trim() || null,
         active: data.active,
         displayOrder: data.displayOrder,
@@ -334,6 +355,7 @@ export async function updateCategory(
   revalidatePath("/admin/services/categories");
   revalidatePath("/admin/services");
   revalidatePath("/services");
+  revalidatePath("/book");
   return { success: true };
 }
 

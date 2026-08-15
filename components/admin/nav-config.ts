@@ -25,6 +25,7 @@ import {
   UserCog,
   Palette,
   Tag,
+  Search,
 } from "lucide-react";
 
 export type NavItem = {
@@ -101,6 +102,7 @@ export const NAV_ENTRIES: NavEntry[] = [
       { label: "Booking", href: "/admin/settings/booking", icon: CalendarCog },
       { label: "Payments", href: "/admin/settings/payments", icon: CreditCard },
       { label: "Notifications", href: "/admin/settings/notifications", icon: Bell },
+      { label: "SEO", href: "/admin/settings/seo", icon: Search },
       { label: "Account", href: "/admin/settings/account", icon: UserCog },
     ],
   },

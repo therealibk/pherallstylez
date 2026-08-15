@@ -4,15 +4,14 @@ import { db } from "@/lib/db";
 import { formatGBP, formatDuration } from "@/lib/service-schemas";
 import { plainTextFromRichText } from "@/lib/rich-text";
 import { Clock, ArrowRight } from "lucide-react";
+import { getPageSeo } from "@/lib/actions/page-seo";
 
-export const metadata: Metadata = {
-  title: "Services — Pherall",
-  description: "Browse all available hair styling services and book your appointment online.",
-  openGraph: {
-    title: "Services — Pherall",
-    description: "Browse all available hair styling services and book your appointment online.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getPageSeo("services");
+  const title = seo.title?.trim() || "Services — Pherall";
+  const description = seo.description?.trim() || "Browse all available hair styling services and book your appointment online.";
+  return { title, description, openGraph: { title, description } };
+}
 
 export default async function ServicesPage() {
   const services = await db.service.findMany({

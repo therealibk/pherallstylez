@@ -5,8 +5,14 @@ import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
 import { parseAboutData } from "@/lib/cms-schemas";
 import { RichTextContent } from "@/components/public/rich-text-content";
+import { getPageSeo } from "@/lib/actions/page-seo";
 
-export const metadata: Metadata = { title: "About — Pherall" };
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getPageSeo("about");
+  const title = seo.title?.trim() || "About — Pherall";
+  const description = seo.description?.trim() || undefined;
+  return { title, ...(description ? { description } : {}) };
+}
 
 export default async function AboutPage() {
   const record = await db.siteContent.findUnique({

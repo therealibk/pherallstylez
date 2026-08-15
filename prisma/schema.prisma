@@ -213,11 +213,20 @@ model PolicyAcceptance {
 model ServiceCategory {
   id           String    @id @default(cuid())
   name         String    @unique
+  slug         String?   @unique
   description  String?
   active       Boolean   @default(true)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
   services     Service[]
+}
+
+model PageSeo {
+  id          String   @id @default(cuid())
+  page        String   @unique
+  title       String?
+  description String?
+  updatedAt   DateTime @updatedAt
 }
 
 model Service {

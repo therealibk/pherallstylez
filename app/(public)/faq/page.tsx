@@ -3,8 +3,14 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { RichTextContent } from "@/components/public/rich-text-content";
+import { getPageSeo } from "@/lib/actions/page-seo";
 
-export const metadata: Metadata = { title: "FAQ — Pherall" };
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getPageSeo("faq");
+  const title = seo.title?.trim() || "FAQ — Pherall";
+  const description = seo.description?.trim() || undefined;
+  return { title, ...(description ? { description } : {}) };
+}
 
 export default async function FaqPage() {
   const faqs = await db.faq.findMany({
