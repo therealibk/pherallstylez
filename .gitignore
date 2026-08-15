@@ -50,3 +50,6 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# TinyMCE self-hosted files (copied from node_modules at build time)
+/public/tinymce

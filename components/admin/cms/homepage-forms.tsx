@@ -180,7 +180,7 @@ export function HeroForm({ initial }: { initial: HeroData }) {
               value={data.description}
               onChange={(val) => setData((d) => ({ ...d, description: val }))}
               placeholder="Short tagline or sub-heading"
-              minHeight="80px"
+              minHeight={200}
             />
           </div>
           <div className="space-y-1.5">
@@ -346,7 +346,7 @@ export function CtaForm({ initial }: { initial: CtaData }) {
               value={data.description}
               onChange={(val) => setData((d) => ({ ...d, description: val }))}
               placeholder="Invite visitors to make an appointment"
-              minHeight="80px"
+              minHeight={200}
             />
           </div>
           <div className="space-y-1.5">

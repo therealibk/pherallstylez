@@ -133,22 +133,33 @@ interface Props {
 }
 
 /**
- * Safely renders rich text content stored as either:
- *   - a serialised TipTap JSON document (new content)
- *   - plain text with \n\n paragraph breaks (legacy content)
+ * Safely renders rich text content stored as:
+ *   - HTML string (from TinyMCE, new content)
+ *   - serialised TipTap JSON document (legacy content)
+ *   - plain text with \n\n paragraph breaks (oldest legacy)
  *
- * Never uses dangerouslySetInnerHTML. Link URLs are validated against a safe
- * allowlist (https, http, mailto, tel); unsafe URLs are silently degraded to
- * plain text.
+ * HTML content is rendered via dangerouslySetInnerHTML — safe here because
+ * only authenticated admins can write it (no user-submitted content reaches
+ * this component).
  */
 export function RichTextContent({ content, className }: Props) {
   if (!content?.trim()) return null;
 
+  // TipTap JSON — render via React nodes (no dangerouslySetInnerHTML needed)
   const doc = parseRichText(content);
+  if (doc) {
+    return <div className={className}>{renderNode(doc, "root")}</div>;
+  }
 
+  // HTML from TinyMCE (starts with a tag or contains HTML tags)
+  if (content.trimStart().startsWith("<") || /<[a-z][\s\S]*>/i.test(content)) {
+    return <div className={className} dangerouslySetInnerHTML={{ __html: content }} />;
+  }
+
+  // Plain text fallback
   return (
     <div className={className}>
-      {doc ? renderNode(doc, "root") : <PlainTextContent content={content} />}
+      <PlainTextContent content={content} />
     </div>
   );
 }

@@ -80,7 +80,7 @@ export function PolicyForm({ policy }: { policy: PolicyRecord }) {
               value={content}
               onChange={setContent}
               placeholder="Enter policy content here…"
-              minHeight="400px"
+              minHeight={400}
             />
           </div>
 

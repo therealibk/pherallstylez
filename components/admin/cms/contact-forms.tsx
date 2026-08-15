@@ -87,7 +87,7 @@ export function ContactPageCopyForm({ initial }: { initial: ContactPageData }) {
               value={data.introduction}
               onChange={(val) => setData((d) => ({ ...d, introduction: val }))}
               placeholder="A friendly paragraph inviting visitors to reach out"
-              minHeight="80px"
+              minHeight={200}
             />
           </div>
           <div className="space-y-1.5">

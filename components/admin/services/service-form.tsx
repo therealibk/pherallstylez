@@ -189,7 +189,7 @@ export function ServiceForm({ categories, service }: Props) {
               value={description}
               onChange={setDescription}
               placeholder="Brief description shown to customers…"
-              minHeight="100px"
+              minHeight={220}
             />
           </div>
 

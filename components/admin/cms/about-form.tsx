@@ -141,7 +141,7 @@ export function AboutForm({ initial }: { initial: AboutPageData }) {
                 value={data.introduction}
                 onChange={(val) => setData((d) => ({ ...d, introduction: val }))}
                 placeholder="A short introduction paragraph shown at the top"
-                minHeight="80px"
+                minHeight={200}
               />
             </div>
           </fieldset>
@@ -155,7 +155,7 @@ export function AboutForm({ initial }: { initial: AboutPageData }) {
                 value={data.biography}
                 onChange={(val) => setData((d) => ({ ...d, biography: val }))}
                 placeholder="Your full story — training, experience, passion for hair…"
-                minHeight="240px"
+                minHeight={300}
               />
             </div>
             <AboutImageUpload

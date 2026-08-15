@@ -211,28 +211,33 @@ function renderNode(node: TipTapNode): string {
 }
 
 /**
- * Convert TipTap JSON string to email-safe HTML.
- * Falls back to treating the input as plain text if it is not valid TipTap JSON.
+ * Convert rich text content to email-safe HTML.
+ * Handles TipTap JSON (legacy), raw HTML (from TinyMCE), and plain text.
  */
 export function richTextToEmailHtml(content: string): string {
   if (!content) return "";
+
+  // TipTap JSON
   try {
     const doc = JSON.parse(content) as TipTapNode;
-    if (doc.type !== "doc" || !Array.isArray(doc.content)) {
-      return `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(content)}</p>`;
+    if (doc.type === "doc" && Array.isArray(doc.content)) {
+      return renderNode(doc);
     }
-    return renderNode(doc);
   } catch {
-    // Plain text fallback — split on newlines
-    return content
-      .split("\n")
-      .filter(Boolean)
-      .map(
-        (line) =>
-          `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(line)}</p>`,
-      )
-      .join("");
+    // not JSON — fall through
   }
+
+  // Raw HTML from TinyMCE — wrap in email-compatible paragraph style and pass through
+  if (content.trimStart().startsWith("<") || /<[a-z][\s\S]*>/i.test(content)) {
+    return `<div style="font-size:15px;line-height:1.6;color:#374151;">${content}</div>`;
+  }
+
+  // Plain text fallback
+  return content
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => `<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#374151;">${escapeHtml(line)}</p>`)
+    .join("");
 }
 
 // ── Email wrapper ─────────────────────────────────────────────────────────────
