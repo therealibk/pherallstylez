@@ -62,6 +62,11 @@ export default async function ManageBookingPage({ params }: Props) {
   const statusInfo = STATUS_LABELS[appt.status] ?? { label: appt.status, color: "#71717a" };
   const balance = appt.pricePence - appt.depositPence;
 
+  // Show payment button when appointment is PENDING and no successful payment exists
+  const paidStatuses = ["PAID_IN_FULL", "DEPOSIT_PAID", "PARTIALLY_REFUNDED"];
+  const hasSuccessfulPayment = appt.payments.some((p) => paidStatuses.includes(p.status));
+  const needsPayment = appt.status === "PENDING" && !hasSuccessfulPayment;
+
   // Determine payment to display — prefer PAID_IN_FULL > DEPOSIT_PAID > others
   const PAYMENT_PRIORITY: Record<string, number> = {
     PAID_IN_FULL: 0, PARTIALLY_REFUNDED: 1, DEPOSIT_PAID: 2, REFUNDED: 3, FAILED: 4, PENDING: 5,
@@ -168,6 +173,29 @@ export default async function ManageBookingPage({ params }: Props) {
             {appt.customer.phone && <Row label="Phone" value={appt.customer.phone} />}
           </dl>
         </div>
+
+        {/* Payment CTA — shown when appointment is PENDING and unpaid */}
+        {needsPayment && (
+          <div className="rounded-2xl border border-border bg-card overflow-hidden mb-6">
+            <div className="px-5 py-4 border-b border-border">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                Payment Required
+              </p>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Your appointment is reserved but not yet confirmed. Complete payment to secure your slot.
+              </p>
+              <a
+                href={`/book/pay/${token}`}
+                className="flex items-center justify-center w-full rounded-xl py-3 px-4 text-sm font-semibold transition-opacity hover:opacity-85"
+                style={{ background: "var(--button,#1a1a1a)", color: "var(--button-foreground,#fff)" }}
+              >
+                Make Payment
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         {(canCancel || canReschedule) && (
