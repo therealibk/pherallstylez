@@ -162,5 +162,40 @@ export async function getBusinessSettings() {
     address: null,
     timezone: "Europe/London",
     currency: "GBP",
+    seoTitle: null,
+    seoDescription: null,
   };
+}
+
+// ── SEO settings ───────────────────────────────────────────────────────────────
+
+const seoSettingsSchema = z.object({
+  seoTitle: z.string().max(120).optional(),
+  seoDescription: z.string().max(320).optional(),
+});
+
+export async function saveSeoSettings(
+  data: { seoTitle: string; seoDescription: string },
+): Promise<ActionResult> {
+  const guard = await requireAdmin();
+  if (guard !== true) return guard;
+
+  const parsed = seoSettingsSchema.safeParse(data);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid data" };
+  }
+
+  const existing = await db.businessSettings.findFirst();
+  if (!existing) return { success: false, error: "Business settings not found" };
+
+  await db.businessSettings.update({
+    where: { id: existing.id },
+    data: {
+      seoTitle: parsed.data.seoTitle?.trim() || null,
+      seoDescription: parsed.data.seoDescription?.trim() || null,
+    },
+  });
+
+  revalidatePath("/admin/settings/business");
+  return { success: true };
 }

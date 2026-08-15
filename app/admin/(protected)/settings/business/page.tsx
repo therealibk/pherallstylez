@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/admin/page-header";
 import { BusinessSettingsForm } from "@/components/admin/settings/business-settings-form";
+import { SeoForm } from "@/components/admin/settings/seo-form";
 import { getBusinessSettings } from "@/lib/actions/booking-settings";
 
 export const metadata: Metadata = { title: "Business Settings — Pherall Admin" };
@@ -9,7 +10,7 @@ export default async function BusinessSettingsPage() {
   const settings = await getBusinessSettings();
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl">
+    <div className="p-6 md:p-8 max-w-3xl space-y-8">
       <PageHeader
         title="Business"
         description="Configure your business name, contact details, timezone, and currency."
@@ -24,6 +25,10 @@ export default async function BusinessSettingsPage() {
           timezone: settings.timezone,
           currency: settings.currency,
         }}
+      />
+      <SeoForm
+        initialTitle={settings.seoTitle ?? ""}
+        initialDescription={settings.seoDescription ?? ""}
       />
     </div>
   );

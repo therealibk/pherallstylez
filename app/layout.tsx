@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { db } from "@/lib/db";
 import {
   Geist,
   Geist_Mono,
@@ -43,29 +44,44 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
 });
 
+export const dynamic = "force-dynamic";
+
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
-  title: "Pherall — Professional Hair Styling",
-  description: "Professional hair styling and beauty services. Book your appointment online.",
-  openGraph: {
-    type: "website",
-    siteName: "Pherall",
-    title: "Pherall — Professional Hair Styling",
-    description: "Professional hair styling and beauty services. Book your appointment online.",
-    url: appUrl,
-  },
-  twitter: {
-    card: "summary",
-    title: "Pherall — Professional Hair Styling",
-    description: "Professional hair styling and beauty services. Book your appointment online.",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+const FALLBACK_TITLE = "Pherall — Professional Hair Styling";
+const FALLBACK_DESCRIPTION = "Professional hair styling and beauty services. Book your appointment online.";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await db.businessSettings.findFirst({
+    select: { businessName: true, seoTitle: true, seoDescription: true },
+  });
+
+  const title = settings?.seoTitle?.trim() || FALLBACK_TITLE;
+  const description = settings?.seoDescription?.trim() || FALLBACK_DESCRIPTION;
+  const siteName = settings?.businessName?.trim() || "Pherall";
+
+  return {
+    metadataBase: new URL(appUrl),
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      siteName,
+      title,
+      description,
+      url: appUrl,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default function RootLayout({
   children,

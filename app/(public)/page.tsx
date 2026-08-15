@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { ContentSection } from "@/lib/generated/prisma/client";
@@ -7,16 +6,6 @@ import { formatGBP, formatDuration } from "@/lib/service-schemas";
 import { RichTextContent } from "@/components/public/rich-text-content";
 import { plainTextFromRichText } from "@/lib/rich-text";
 import { Clock, ArrowRight } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "Pherall — Professional Hair Styling",
-  description: "Professional hair styling and beauty services. Book your appointment online in minutes.",
-  openGraph: {
-    title: "Pherall — Professional Hair Styling",
-    description: "Professional hair styling and beauty services. Book your appointment online in minutes.",
-    type: "website",
-  },
-};
 
 export default async function HomePage() {
   const [record, featuredServices] = await Promise.all([

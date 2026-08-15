@@ -129,6 +129,9 @@ model BusinessSettings {
   timezone       String   @default("Europe/London")
   // Appearance settings: colours (7 hex vars), font key, faviconUrl
   appearanceData       Json?
+  // SEO meta tags — shown in search results and social previews
+  seoTitle             String?
+  seoDescription       String?
   // Stripe keys — stored in DB so admin can configure via UI (fallback: env vars)
   stripeSecretKey      String?
   stripePublishableKey String?
