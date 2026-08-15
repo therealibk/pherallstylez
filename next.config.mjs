@@ -37,8 +37,20 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
-        headers: securityHeaders,
+        // HTML pages must not be cached by reverse proxies — stale HTML points to
+        // outdated CSS hashes after a new build, causing a flash of unstyled content.
+        source: "/((?!_next/static|_next/image|favicon.ico).*)",
+        headers: [
+          ...securityHeaders,
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
+      },
+      {
+        // Next.js hashed static assets can be cached forever
+        source: "/_next/static/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
       },
     ];
   },

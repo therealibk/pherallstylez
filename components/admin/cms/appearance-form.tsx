@@ -5,11 +5,14 @@ import { saveAppearanceSettings, uploadLogoImage, uploadFaviconImage } from "@/l
 import {
   ALLOWED_FONTS,
   FONT_LABELS,
-  COLOR_VAR_NAMES,
+  PUBLIC_COLOR_VAR_NAMES,
   COLOR_LABELS,
+  type ColorVarName,
   type AppearanceColors,
   type FontKey,
 } from "@/lib/appearance-schemas";
+
+const ADMIN_COLOR_VAR_NAMES: ColorVarName[] = ["--admin-sidebar"];
 
 interface Props {
   initialColors: AppearanceColors;
@@ -164,14 +167,53 @@ export function AppearanceForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      {/* Colours */}
+      {/* Public site colours */}
       <SectionCard title="Brand Colours">
         <p className="text-sm text-muted-foreground">
-          Choose colours for your public website. Changes apply when you save — the admin
-          dashboard is unaffected.
+          Choose colours for your public website.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          {COLOR_VAR_NAMES.map((varName) => (
+          {PUBLIC_COLOR_VAR_NAMES.map((varName) => (
+            <div key={varName} className="flex items-center gap-3">
+              <input
+                type="color"
+                value={colors[varName]}
+                onChange={(e) => setColor(varName, e.target.value)}
+                className="h-9 w-9 rounded border cursor-pointer bg-transparent p-0.5"
+                aria-label={COLOR_LABELS[varName]}
+              />
+              <div className="min-w-0">
+                <label className="block text-sm font-medium leading-none mb-1">
+                  {COLOR_LABELS[varName]}
+                </label>
+                <input
+                  type="text"
+                  value={colors[varName]}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^#[0-9a-fA-F]{0,6}$/.test(v)) setColor(varName, v);
+                  }}
+                  maxLength={7}
+                  className="w-24 rounded border bg-muted/30 px-2 py-1 text-xs font-mono"
+                  aria-label={`${COLOR_LABELS[varName]} hex value`}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-2 pt-4 border-t">
+          <SaveRow state={currentSaveState} error={saveError} />
+        </div>
+      </SectionCard>
+
+      {/* Admin dashboard colours */}
+      <SectionCard title="Admin Dashboard">
+        <p className="text-sm text-muted-foreground">
+          Customise the colour of the admin sidebar.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {ADMIN_COLOR_VAR_NAMES.map((varName) => (
             <div key={varName} className="flex items-center gap-3">
               <input
                 type="color"

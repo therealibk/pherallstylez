@@ -18,7 +18,7 @@ export function AdminSidebar({ displayName }: AdminSidebarProps) {
   return (
     <aside
       className="hidden w-60 shrink-0 flex-col md:flex"
-      style={{ background: "var(--foreground)" }}
+      style={{ background: "var(--admin-sidebar, #1a1a1a)" }}
       aria-label="Sidebar"
     >
       {/* Logo / wordmark */}

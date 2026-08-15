@@ -15,7 +15,7 @@ interface PageDef {
   defaultDescription: string;
 }
 
-const PAGES: PageDef[] = [
+const MAIN_PAGES: PageDef[] = [
   {
     key: "home",
     label: "Home",
@@ -48,17 +48,20 @@ const PAGES: PageDef[] = [
   },
 ];
 
+const POLICY_PAGES: PageDef[] = [
+  { key: "privacy-policy", label: "Privacy Policy", defaultTitle: "Privacy Policy — Pherall", defaultDescription: "" },
+  { key: "terms-and-conditions", label: "Terms & Conditions", defaultTitle: "Terms & Conditions — Pherall", defaultDescription: "" },
+  { key: "booking-policy", label: "Booking Policy", defaultTitle: "Booking Policy — Pherall", defaultDescription: "" },
+  { key: "appointment-policy", label: "Appointment Policy", defaultTitle: "Appointment Policy — Pherall", defaultDescription: "" },
+  { key: "cancellation-policy", label: "Cancellation Policy", defaultTitle: "Cancellation Policy — Pherall", defaultDescription: "" },
+  { key: "refund-policy", label: "Refund Policy", defaultTitle: "Refund Policy — Pherall", defaultDescription: "" },
+];
+
 interface Props {
   initial: Record<PageKey, { title: string | null; description: string | null }>;
 }
 
-function PageSeoCard({
-  page,
-  initial,
-}: {
-  page: PageDef;
-  initial: { title: string | null; description: string | null };
-}) {
+function PageSeoCard({ page, initial }: { page: PageDef; initial: { title: string | null; description: string | null } }) {
   const [title, setTitle] = useState(initial.title ?? "");
   const [description, setDescription] = useState(initial.description ?? "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -121,12 +124,8 @@ function PageSeoCard({
             <Button type="submit" size="sm" disabled={status === "saving"}>
               {status === "saving" ? "Saving…" : "Save"}
             </Button>
-            {status === "saved" && (
-              <span className="text-sm text-green-600 font-medium">Saved.</span>
-            )}
-            {status === "error" && (
-              <span className="text-sm text-destructive">{error}</span>
-            )}
+            {status === "saved" && <span className="text-sm text-green-600 font-medium">Saved.</span>}
+            {status === "error" && <span className="text-sm text-destructive">{error}</span>}
           </div>
         </form>
       </CardContent>
@@ -134,12 +133,22 @@ function PageSeoCard({
   );
 }
 
-export function PageSeoForm({ initial }: Props) {
+function PageGroup({ title, pages, initial }: { title: string; pages: PageDef[]; initial: Props["initial"] }) {
   return (
-    <div className="space-y-6">
-      {PAGES.map((page) => (
+    <div className="space-y-4">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">{title}</h2>
+      {pages.map((page) => (
         <PageSeoCard key={page.key} page={page} initial={initial[page.key]} />
       ))}
+    </div>
+  );
+}
+
+export function PageSeoForm({ initial }: Props) {
+  return (
+    <div className="space-y-10">
+      <PageGroup title="Main Pages" pages={MAIN_PAGES} initial={initial} />
+      <PageGroup title="Policy Pages" pages={POLICY_PAGES} initial={initial} />
     </div>
   );
 }

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 import {
   parseAppearanceData,
   FONT_VAR_NAMES,
-  COLOR_VAR_NAMES,
+  PUBLIC_COLOR_VAR_NAMES,
   DEFAULT_COLORS,
 } from "@/lib/appearance-schemas";
 import { PublicNav } from "@/components/public/nav/public-nav";
@@ -32,7 +32,7 @@ export default async function PublicLayout({
 
   const cssEntries: string[] = [];
 
-  for (const varName of COLOR_VAR_NAMES) {
+  for (const varName of PUBLIC_COLOR_VAR_NAMES) {
     const value = appearance.colors[varName];
     const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : DEFAULT_COLORS[varName];
     cssEntries.push(`${varName}:${hex}`);

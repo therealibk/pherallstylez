@@ -4,6 +4,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { type PageKey, ALL_PAGE_KEYS, PAGE_PATHS } from "@/lib/page-seo-config";
+
+export type { PageKey };
 
 async function requireAdmin(): Promise<true | { success: false; error: string }> {
   const session = await auth();
@@ -12,16 +15,6 @@ async function requireAdmin(): Promise<true | { success: false; error: string }>
 }
 
 export type ActionResult = { success: true } | { success: false; error: string };
-
-export type PageKey = "home" | "services" | "about" | "contact" | "faq";
-
-const PAGE_PATHS: Record<PageKey, string[]> = {
-  home: ["/"],
-  services: ["/services"],
-  about: ["/about"],
-  contact: ["/contact"],
-  faq: ["/faq"],
-};
 
 const seoSchema = z.object({
   title: z.string().max(120).optional(),
@@ -34,9 +27,8 @@ export async function getAllPageSeo(): Promise<
   const rows = await db.pageSeo.findMany();
   const byPage = Object.fromEntries(rows.map((r) => [r.page, r]));
 
-  const keys: PageKey[] = ["home", "services", "about", "contact", "faq"];
   return Object.fromEntries(
-    keys.map((k) => [
+    ALL_PAGE_KEYS.map((k) => [
       k,
       { title: byPage[k]?.title ?? null, description: byPage[k]?.description ?? null },
     ]),

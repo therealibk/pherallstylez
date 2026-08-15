@@ -32,6 +32,7 @@ export const COLOR_VAR_NAMES = [
   "--foreground",
   "--button",
   "--button-foreground",
+  "--admin-sidebar",
 ] as const;
 
 export type ColorVarName = (typeof COLOR_VAR_NAMES)[number];
@@ -44,6 +45,7 @@ export const COLOR_LABELS: Record<ColorVarName, string> = {
   "--foreground": "Foreground (text)",
   "--button": "Button background",
   "--button-foreground": "Button text",
+  "--admin-sidebar": "Admin sidebar",
 };
 
 // Defaults that approximate the current globals.css OKLCH values in hex
@@ -55,7 +57,13 @@ export const DEFAULT_COLORS: Record<ColorVarName, string> = {
   "--foreground": "#1a1a1a",
   "--button": "#1a1a1a",
   "--button-foreground": "#ffffff",
+  "--admin-sidebar": "#1a1a1a",
 };
+
+// Public-site colour vars (applied in public layout)
+export const PUBLIC_COLOR_VAR_NAMES = COLOR_VAR_NAMES.filter(
+  (v) => v !== "--admin-sidebar",
+) as Exclude<ColorVarName, "--admin-sidebar">[];
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
