@@ -42,6 +42,9 @@ export interface AppointmentEmailData {
   depositPence: number;
   currency?: string;
   businessName: string;
+  logoUrl?: string | null;
+  buttonColor?: string | null;
+  buttonTextColor?: string | null;
   manageUrl?: string;
   cancellationReason?: string;
   reminderOffsetHours?: number;
@@ -242,16 +245,24 @@ const baseStyle = `
   background: #ffffff;
 `;
 
-export function emailWrapper(content: string, businessName: string): string {
+export function emailWrapper(
+  content: string,
+  businessName: string,
+  logoUrl?: string | null,
+): string {
+  const headerHtml = logoUrl
+    ? `<div style="padding:20px 32px;border-bottom:1px solid #e4e4e7;">
+        <img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(businessName)}" style="height:40px;width:auto;max-width:160px;object-fit:contain;display:block;" />
+      </div>`
+    : "";
+
   return `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
 <body style="margin:0;padding:0;background:#f4f4f5;">
   <div style="${baseStyle}padding:0 0 40px;">
-    <div style="background:#1a1a1a;padding:24px 32px;">
-      <p style="margin:0;color:#ffffff;font-size:18px;font-weight:600;letter-spacing:-0.3px;">${escapeHtml(businessName)}</p>
-    </div>
+    ${headerHtml}
     <div style="padding:32px;">
       ${content}
     </div>
@@ -263,11 +274,17 @@ export function emailWrapper(content: string, businessName: string): string {
 </html>`;
 }
 
-function manageLink(url: string): string {
+function manageLink(
+  url: string,
+  buttonColor = "#1a1a1a",
+  buttonTextColor = "#ffffff",
+): string {
   if (!url || !isSafeUrl(url)) return "";
+  const bg = /^#[0-9a-fA-F]{6}$/.test(buttonColor) ? buttonColor : "#1a1a1a";
+  const fg = /^#[0-9a-fA-F]{6}$/.test(buttonTextColor) ? buttonTextColor : "#ffffff";
   return `
     <p style="margin:24px 0 0;">
-      <a href="${escapeHtml(url)}" style="display:inline-block;background:#1a1a1a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;font-weight:500;">Manage my appointment</a>
+      <a href="${escapeHtml(url)}" style="display:inline-block;background:${bg};color:${fg};text-decoration:none;padding:12px 24px;border-radius:999px;font-size:14px;font-weight:500;">Manage my appointment</a>
     </p>`;
 }
 
@@ -305,8 +322,8 @@ export function buildEmailTemplate(
         <p style="margin:0 0 4px;font-size:15px;color:#52525b;">Hi ${escapeHtml(data.customerFirstName)},</p>
         <p style="margin:0;font-size:15px;color:#52525b;">Your booking request has been received. Payment is required to confirm your appointment.</p>
         ${appointmentSummaryBlock(data)}
-        ${data.manageUrl ? manageLink(data.manageUrl) : ""}
-      `, data.businessName);
+        ${data.manageUrl ? manageLink(data.manageUrl, data.buttonColor ?? undefined, data.buttonTextColor ?? undefined) : ""}
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
 
@@ -317,8 +334,8 @@ export function buildEmailTemplate(
         <p style="margin:0 0 4px;font-size:15px;color:#52525b;">Hi ${escapeHtml(data.customerFirstName)},</p>
         <p style="margin:0;font-size:15px;color:#52525b;">Your payment has been confirmed and your appointment is booked.</p>
         ${appointmentSummaryBlock(data)}
-        ${data.manageUrl ? manageLink(data.manageUrl) : ""}
-      `, data.businessName);
+        ${data.manageUrl ? manageLink(data.manageUrl, data.buttonColor ?? undefined, data.buttonTextColor ?? undefined) : ""}
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
 
@@ -331,8 +348,8 @@ export function buildEmailTemplate(
         <p style="margin:0 0 4px;font-size:15px;color:#52525b;">Hi ${escapeHtml(data.customerFirstName)},</p>
         <p style="margin:0;font-size:15px;color:#52525b;">This is a reminder that your appointment is coming up in <strong>${label}</strong>.</p>
         ${appointmentSummaryBlock(data)}
-        ${data.manageUrl ? manageLink(data.manageUrl) : ""}
-      `, data.businessName);
+        ${data.manageUrl ? manageLink(data.manageUrl, data.buttonColor ?? undefined, data.buttonTextColor ?? undefined) : ""}
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
 
@@ -344,7 +361,7 @@ export function buildEmailTemplate(
         <p style="margin:0;font-size:15px;color:#52525b;">Your appointment has been cancelled${data.cancellationReason ? `: ${data.cancellationReason}` : ""}.</p>
         ${appointmentSummaryBlock(data)}
         <p style="margin:20px 0 0;font-size:14px;color:#71717a;">If you have any questions, please get in touch.</p>
-      `, data.businessName);
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
 
@@ -355,8 +372,8 @@ export function buildEmailTemplate(
         <p style="margin:0 0 4px;font-size:15px;color:#52525b;">Hi ${escapeHtml(data.customerFirstName)},</p>
         <p style="margin:0;font-size:15px;color:#52525b;">Your appointment has been rescheduled. Here are your updated details:</p>
         ${appointmentSummaryBlock(data)}
-        ${data.manageUrl ? manageLink(data.manageUrl) : ""}
-      `, data.businessName);
+        ${data.manageUrl ? manageLink(data.manageUrl, data.buttonColor ?? undefined, data.buttonTextColor ?? undefined) : ""}
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
 
@@ -368,7 +385,7 @@ export function buildEmailTemplate(
         <p style="margin:0;font-size:15px;color:#52525b;">Your refund has been processed. Please allow 5–10 business days for it to appear in your account.</p>
         ${appointmentSummaryBlock(data)}
         <p style="margin:20px 0 0;font-size:14px;color:#71717a;">If you have any questions, please get in touch.</p>
-      `, data.businessName);
+      `, data.businessName, data.logoUrl);
       return { subject, html };
     }
   }
@@ -386,12 +403,17 @@ export function buildEmailFromCmsTemplate(
   vars: EmailVars,
   businessName: string,
   manageUrl?: string,
+  logoUrl?: string | null,
+  buttonColor?: string | null,
+  buttonTextColor?: string | null,
 ): { subject: string; html: string } {
   const subject = substituteVariables(cmsSubject, vars);
   const rawHtml = richTextToEmailHtml(cmsBody);
   const bodyHtml = substituteVariables(rawHtml, vars);
-  const link = manageUrl && isSafeUrl(manageUrl) ? manageLink(manageUrl) : "";
-  const html = emailWrapper(bodyHtml + link, businessName);
+  const link = manageUrl && isSafeUrl(manageUrl)
+    ? manageLink(manageUrl, buttonColor ?? undefined, buttonTextColor ?? undefined)
+    : "";
+  const html = emailWrapper(bodyHtml + link, businessName, logoUrl);
   return { subject, html };
 }
 

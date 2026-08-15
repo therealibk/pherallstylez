@@ -6,17 +6,28 @@ import {
   buildEmailVars,
   type AppointmentEmailData,
 } from "@/lib/email-templates";
+import { parseAppearanceData } from "@/lib/appearance-schemas";
 import type { NotificationType } from "@/lib/generated/prisma/client";
 
-/** Resolve email config: DB row takes precedence over env vars. */
-async function getEmailConfig(): Promise<{ apiKey: string | null; from: string }> {
+/** Resolve email config and branding from DB, falling back to env vars. */
+async function getEmailConfig(): Promise<{
+  apiKey: string | null;
+  from: string;
+  logoUrl: string | null;
+  buttonColor: string;
+  buttonTextColor: string;
+}> {
   const settings = await db.businessSettings.findFirst({
-    select: { resendApiKey: true, emailFrom: true },
+    select: { resendApiKey: true, emailFrom: true, logoUrl: true, appearanceData: true },
   });
   const apiKey = settings?.resendApiKey || process.env.RESEND_API_KEY || null;
   const from =
     settings?.emailFrom || process.env.EMAIL_FROM || "noreply@example.com";
-  return { apiKey, from };
+  const logoUrl = settings?.logoUrl ?? null;
+  const appearance = parseAppearanceData(settings?.appearanceData);
+  const buttonColor = appearance.colors["--button"] ?? "#1a1a1a";
+  const buttonTextColor = appearance.colors["--button-foreground"] ?? "#ffffff";
+  return { apiKey, from, logoUrl, buttonColor, buttonTextColor };
 }
 
 /** Load active CMS template for a given type, or null if not found / inactive. */
@@ -77,24 +88,37 @@ export async function sendNotification(input: SendNotificationInput): Promise<vo
   }
 
   // Resolve subject + html from CMS template (preferred) or hardcoded fallback
-  const cmsTemplate = await loadCmsTemplate(type);
+  const [cmsTemplate, { apiKey, from, logoUrl, buttonColor, buttonTextColor }] = await Promise.all([
+    loadCmsTemplate(type),
+    getEmailConfig(),
+  ]);
+
+  const enrichedData: AppointmentEmailData = {
+    ...data,
+    reminderOffsetHours,
+    logoUrl: data.logoUrl ?? logoUrl,
+    buttonColor: data.buttonColor ?? buttonColor,
+    buttonTextColor: data.buttonTextColor ?? buttonTextColor,
+  };
+
   let subject: string;
   let html: string;
 
   if (cmsTemplate) {
-    const vars = buildEmailVars(type, { ...data, reminderOffsetHours });
+    const vars = buildEmailVars(type, enrichedData);
     ({ subject, html } = buildEmailFromCmsTemplate(
       cmsTemplate.subject,
       cmsTemplate.body,
       vars,
-      data.businessName,
-      data.manageUrl,
+      enrichedData.businessName,
+      enrichedData.manageUrl,
+      enrichedData.logoUrl,
+      enrichedData.buttonColor,
+      enrichedData.buttonTextColor,
     ));
   } else {
-    ({ subject, html } = buildEmailTemplate(type, { ...data, reminderOffsetHours }));
+    ({ subject, html } = buildEmailTemplate(type, enrichedData));
   }
-
-  const { apiKey, from } = await getEmailConfig();
 
   if (!apiKey) {
     console.log(`[email] No API key configured — skipping send for ${deduplicationKey}`);
