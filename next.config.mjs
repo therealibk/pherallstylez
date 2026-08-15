@@ -3,11 +3,11 @@
 // meaningful protection regardless. Upgrade to nonce-based CSP if stricter script-src is needed.
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self'",
-  "connect-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://cdn.tiny.cloud",
+  "style-src 'self' 'unsafe-inline' https://cdn.tiny.cloud",
+  "img-src 'self' data: blob: https://cdn.tiny.cloud",
+  "font-src 'self' https://cdn.tiny.cloud",
+  "connect-src 'self' https://cdn.tiny.cloud",
   "frame-src 'none'",
   "object-src 'none'",
   "base-uri 'self'",
