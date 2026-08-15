@@ -122,8 +122,15 @@ export type PolicyInput = z.infer<typeof policyInputSchema>;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+function tryParseJson(raw: unknown): unknown {
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw); } catch { return raw; }
+  }
+  return raw;
+}
+
 export function parseHomepageData(raw: unknown): HomepageData {
-  const result = homepageSchema.safeParse(raw);
+  const result = homepageSchema.safeParse(tryParseJson(raw));
   return result.success
     ? result.data
     : {
@@ -135,7 +142,7 @@ export function parseHomepageData(raw: unknown): HomepageData {
 }
 
 export function parseAboutData(raw: unknown): AboutPageData {
-  const result = aboutPageSchema.safeParse(raw);
+  const result = aboutPageSchema.safeParse(tryParseJson(raw));
   return result.success
     ? result.data
     : {
@@ -150,7 +157,7 @@ export function parseAboutData(raw: unknown): AboutPageData {
 }
 
 export function parseContactData(raw: unknown): ContactPageData {
-  const result = contactPageSchema.safeParse(raw);
+  const result = contactPageSchema.safeParse(tryParseJson(raw));
   return result.success
     ? result.data
     : { heading: "", introduction: "", openingHours: "" };

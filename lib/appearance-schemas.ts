@@ -84,7 +84,9 @@ export const appearanceDataSchema = z.object({
 export type AppearanceData = z.infer<typeof appearanceDataSchema>;
 
 export function parseAppearanceData(raw: unknown): AppearanceData {
-  const result = appearanceDataSchema.safeParse(raw);
+  // pg may return Json fields as a raw string rather than a parsed object
+  const data = typeof raw === "string" ? (() => { try { return JSON.parse(raw); } catch { return raw; } })() : raw;
+  const result = appearanceDataSchema.safeParse(data);
   return result.success
     ? result.data
     : {
