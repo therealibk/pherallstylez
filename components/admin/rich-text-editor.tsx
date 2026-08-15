@@ -103,7 +103,7 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight = 240 }
 
   return (
     <Editor
-      tinymceScriptSrc="/tinymce/tinymce.min.js"
+      apiKey="vtq4nqxpdel8o23pkiuuxzo453rilexchls7aswoo0h0jms2"
       initialValue={initialHtml.current}
       onEditorChange={(content) => onChange(content)}
       init={{

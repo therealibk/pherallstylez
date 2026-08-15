@@ -64,7 +64,6 @@ export async function saveAppearanceSettings(data: {
     data: { appearanceData: updated as any },
   });
 
-  revalidatePath("/admin/content/appearance");
   revalidatePath("/");
   revalidatePath("/about");
   revalidatePath("/contact");

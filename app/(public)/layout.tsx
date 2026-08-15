@@ -30,24 +30,24 @@ export default async function PublicLayout({
 }) {
   const { appearance, logoUrl, businessName } = await getAppearance();
 
-  const cssVars: Record<string, string> = {};
+  const cssEntries: string[] = [];
 
   for (const varName of COLOR_VAR_NAMES) {
     const value = appearance.colors[varName];
-    if (/^#[0-9a-fA-F]{6}$/.test(value)) {
-      cssVars[varName] = value;
-    } else {
-      cssVars[varName] = DEFAULT_COLORS[varName];
-    }
+    const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : DEFAULT_COLORS[varName];
+    cssEntries.push(`${varName}:${hex}`);
   }
 
   const fontVarName = FONT_VAR_NAMES[appearance.font] ?? FONT_VAR_NAMES.geist;
-  cssVars["--font-sans"] = `var(${fontVarName}, ui-sans-serif, system-ui, sans-serif)`;
+  cssEntries.push(`--font-sans:var(${fontVarName},ui-sans-serif,system-ui,sans-serif)`);
+
+  const cssOverride = `:root{${cssEntries.join(";")}}`;
 
   return (
+    <>
+    <style dangerouslySetInnerHTML={{ __html: cssOverride }} />
     <div
       className="flex flex-col min-h-full"
-      style={cssVars as React.CSSProperties}
     >
       {/* Skip to main content — WCAG 2.4.1 */}
       <a
@@ -151,5 +151,6 @@ export default async function PublicLayout({
         </div>
       </footer>
     </div>
+    </>
   );
 }
