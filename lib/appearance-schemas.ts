@@ -79,6 +79,7 @@ export const appearanceColorsSchema = z.object({
   "--foreground": hexColorSchema.default(DEFAULT_COLORS["--foreground"]),
   "--button": hexColorSchema.default(DEFAULT_COLORS["--button"]),
   "--button-foreground": hexColorSchema.default(DEFAULT_COLORS["--button-foreground"]),
+  "--admin-sidebar": hexColorSchema.default(DEFAULT_COLORS["--admin-sidebar"]),
 });
 
 export type AppearanceColors = z.infer<typeof appearanceColorsSchema>;
