@@ -540,7 +540,7 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
   // Fire-and-forget: send booking received email after successful transaction
   setImmediate(async () => {
     try {
-      const [appt, business] = await Promise.all([
+      const [appt, business, adminUser] = await Promise.all([
         db.appointment.findFirst({
           where: { tokens: { some: { tokenHash: createHash("sha256").update(rawToken).digest("hex") } } },
           select: {
@@ -550,13 +550,16 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
             timezone: true,
             pricePence: true,
             depositPence: true,
-            customer: { select: { firstName: true, email: true } },
+            customer: { select: { firstName: true, lastName: true, email: true, phone: true } },
           },
         }),
-        db.businessSettings.findFirst({ select: { businessName: true } }),
+        db.businessSettings.findFirst({ select: { businessName: true, resendApiKey: true, emailFrom: true } }),
+        db.user.findFirst({ select: { email: true } }),
       ]);
       if (!appt || !business) return;
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+      // Customer confirmation email
       void sendNotification({
         appointmentId: appt.id,
         type: "BOOKING_CONFIRMATION",
@@ -574,6 +577,39 @@ export async function createBooking(input: unknown): Promise<BookingResult> {
           manageUrl: `${appUrl}/manage-booking/${rawToken}`,
         },
       });
+
+      // Admin new-booking notification
+      const adminEmail = adminUser?.email;
+      const apiKey = business.resendApiKey || process.env.RESEND_API_KEY;
+      const fromEmail = business.emailFrom || process.env.EMAIL_FROM;
+      if (adminEmail && apiKey && fromEmail) {
+        try {
+          const { Resend } = await import("resend");
+          const resend = new Resend(apiKey);
+          const bookedAt = new Intl.DateTimeFormat("en-GB", {
+            dateStyle: "full", timeStyle: "short", timeZone: appt.timezone,
+          }).format(new Date(appt.startAt));
+          const customerName = `${appt.customer.firstName} ${appt.customer.lastName ?? ""}`.trim();
+          await resend.emails.send({
+            from: fromEmail,
+            to: adminEmail,
+            subject: `New booking: ${appt.serviceName} — ${customerName}`,
+            html: `
+              <p>You have a new booking.</p>
+              <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Service</td><td><strong>${appt.serviceName}</strong></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Date &amp; time</td><td><strong>${bookedAt}</strong></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Customer</td><td>${customerName}</td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666">Email</td><td><a href="mailto:${appt.customer.email}">${appt.customer.email}</a></td></tr>
+                ${appt.customer.phone ? `<tr><td style="padding:4px 12px 4px 0;color:#666">Phone</td><td>${appt.customer.phone}</td></tr>` : ""}
+              </table>
+              <p style="margin-top:16px"><a href="${appUrl}/admin/appointments" style="background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:13px">View in admin</a></p>
+            `,
+          });
+        } catch (err) {
+          console.error("[createBooking] admin notification email failed:", err);
+        }
+      }
     } catch (err) {
       console.error("[createBooking] booking confirmation email failed:", err);
     }
