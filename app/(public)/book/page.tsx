@@ -59,7 +59,7 @@ export default async function BookPage() {
           {categories.map((cat) => (
             <li key={cat.id}>
               <Link
-                href={`/book/${cat.slug}`}
+                href={`/book/c/${cat.slug}`}
                 className="group flex flex-col gap-3 rounded-2xl border p-6 transition-all hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 style={{ background: "var(--card,#fff)" }}
               >
