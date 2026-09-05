@@ -61,14 +61,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteName = settings?.businessName?.trim() || "Pherall";
 
   const appearance = settings?.appearanceData as { faviconUrl?: string } | null;
-  const faviconUrl = appearance?.faviconUrl?.trim() || null;
+  const hasFavicon = !!appearance?.faviconUrl?.trim();
 
   return {
     metadataBase: new URL(appUrl),
     title,
     description,
-    ...(faviconUrl && {
-      icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl },
+    ...(hasFavicon && {
+      icons: {
+        icon: `${appUrl}/api/favicon`,
+        shortcut: `${appUrl}/api/favicon`,
+        apple: `${appUrl}/api/favicon`,
+      },
     }),
     openGraph: {
       type: "website",
