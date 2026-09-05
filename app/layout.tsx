@@ -53,17 +53,23 @@ const FALLBACK_DESCRIPTION = "Professional hair styling and beauty services. Boo
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await db.businessSettings.findFirst({
-    select: { businessName: true, seoTitle: true, seoDescription: true },
+    select: { businessName: true, seoTitle: true, seoDescription: true, appearanceData: true },
   });
 
   const title = settings?.seoTitle?.trim() || FALLBACK_TITLE;
   const description = settings?.seoDescription?.trim() || FALLBACK_DESCRIPTION;
   const siteName = settings?.businessName?.trim() || "Pherall";
 
+  const appearance = settings?.appearanceData as { faviconUrl?: string } | null;
+  const faviconUrl = appearance?.faviconUrl?.trim() || null;
+
   return {
     metadataBase: new URL(appUrl),
     title,
     description,
+    ...(faviconUrl && {
+      icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl },
+    }),
     openGraph: {
       type: "website",
       siteName,
