@@ -34,6 +34,15 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/favicon.ico",
+        destination: "/api/favicon",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {
